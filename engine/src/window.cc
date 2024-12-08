@@ -34,7 +34,7 @@ Window::~Window()
             break;
         case rendering::API::Vulkan:
         case rendering::API::Metal:
-        case rendering::API::DirectX12:
+        case rendering::API::DirectX:
             perror("Unimplemented");
     }
     SDL_Quit();
@@ -62,7 +62,7 @@ void Window::createWindow(const std::string& title, Size size, rendering::API ap
         case rendering::API::Vulkan:
             //flags = SDL_WINDOW_VULKAN;
         case rendering::API::Metal:
-        case rendering::API::DirectX12:
+        case rendering::API::DirectX:
             perror("Unimplemented");
     }
 }
@@ -87,7 +87,7 @@ void Window::initializeContext(rendering::API api)
             break;
         case rendering::API::Vulkan:
         case rendering::API::Metal:
-        case rendering::API::DirectX12:
+        case rendering::API::DirectX:
             perror("Unimplemented");
     }
 }
@@ -101,7 +101,7 @@ void Window::update(rendering::API api)
             break;
         case rendering::API::Vulkan:
         case rendering::API::Metal:
-        case rendering::API::DirectX12:
+        case rendering::API::DirectX:
             perror("Unimplemented");
     }
 }

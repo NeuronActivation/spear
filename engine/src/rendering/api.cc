@@ -9,7 +9,7 @@ bool isActive(API api)
     {
         case spear::rendering::API::OpenGL: return true;
         case spear::rendering::API::Vulkan:
-        case spear::rendering::API::DirectX12:
+        case spear::rendering::API::DirectX:
         case spear::rendering::API::Metal: break;
     }
     return false;

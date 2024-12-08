@@ -1,2 +1,4 @@
 *build
 *.cache
+/engine/cmake-build-debug/
+/.idea/

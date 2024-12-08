@@ -47,7 +47,7 @@ ShaderFileData getShaderFiles(ShaderType type, API api)
         }
         case API::Vulkan:
         case API::Metal:
-        case API::DirectX12:
+        case API::DirectX:
             break;
     }
     return {"", ""};
