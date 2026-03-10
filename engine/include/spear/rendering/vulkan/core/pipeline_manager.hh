@@ -23,6 +23,11 @@ public:
         return m_graphicsPipeline;
     }
 
+    VkPipelineLayout getPipelineLayout() const
+    {
+        return m_pipelineLayout;
+    }
+
 private:
     std::string readGLSLFile(const std::string& filepath);
     std::vector<uint32_t> compileGLSLToSPIRV(const std::string& source, shaderc_shader_kind kind);
@@ -30,6 +35,7 @@ private:
 
 private:
     VkPipeline m_graphicsPipeline = VK_NULL_HANDLE;
+    VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
 };
 
 } // namespace spear::rendering::vulkan

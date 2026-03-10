@@ -36,7 +36,6 @@ void PipelineManager::initialize(VkDevice device, VkRenderPass renderPass, VkExt
     pushConstantRange.offset = 0;
     pushConstantRange.size = sizeof(glm::mat4);
 
-    VkPipelineLayout pipelineLayout;
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;
@@ -44,7 +43,7 @@ void PipelineManager::initialize(VkDevice device, VkRenderPass renderPass, VkExt
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
 
-    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS)
+    if (vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &m_pipelineLayout) != VK_SUCCESS)
     {
         throw std::runtime_error("Failed to create pipeline layout!");
     }
@@ -189,7 +188,7 @@ void PipelineManager::initialize(VkDevice device, VkRenderPass renderPass, VkExt
     pipelineInfo.pRasterizationState = &rasterizer;
     pipelineInfo.pMultisampleState = &multisampling;
     pipelineInfo.pColorBlendState = &colorBlending;
-    pipelineInfo.layout = pipelineLayout;
+    pipelineInfo.layout = m_pipelineLayout;
     pipelineInfo.renderPass = renderPass;
     pipelineInfo.subpass = 0;
 
@@ -219,6 +218,11 @@ void PipelineManager::cleanup(VkDevice device)
     {
         vkDestroyPipeline(device, m_graphicsPipeline, nullptr);
         m_graphicsPipeline = VK_NULL_HANDLE;
+    }
+    if (m_pipelineLayout != VK_NULL_HANDLE)
+    {
+        vkDestroyPipelineLayout(device, m_pipelineLayout, nullptr);
+        m_pipelineLayout = VK_NULL_HANDLE;
     }
 }
 

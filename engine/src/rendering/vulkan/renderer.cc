@@ -1,4 +1,6 @@
 #include <spear/rendering/vulkan/renderer.hh>
+#include <spear/rendering/vulkan/frame_context.hh>
+#include <spear/scene.hh>
 
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
@@ -9,12 +11,6 @@
 namespace spear::rendering::vulkan
 {
 
-struct Vertex
-{
-    glm::vec3 position;
-    glm::vec3 color;
-    glm::vec2 texCoord;
-};
 
 Renderer::Renderer(VulkanWindow& vulkan_window)
     : BaseRenderer(vulkan_window)
@@ -48,7 +44,8 @@ void Renderer::render()
 
 void Renderer::drawFrame()
 {
-    VkDevice device = m_deviceManager.getDevice();
+    std::cout << "CurrentFrame: " << m_currentFrame << std::endl;
+    auto* device = m_deviceManager.getDevice();
     if (device == VK_NULL_HANDLE)
     {
         std::cerr << "Device is null" << std::endl;
@@ -57,8 +54,14 @@ void Renderer::drawFrame()
     VkQueue graphicsQueue = m_deviceManager.getGraphicsQueue();
     VkQueue presentQueue = m_deviceManager.getPresentQueue();
 
-    auto fence = m_synchronization.getInFlightFence(m_currentFrame);
+    auto* fence = m_synchronization.getInFlightFence(m_currentFrame);
+    if (fence == VK_NULL_HANDLE)
+    {
+        std::cerr << "Fence is null" << std::endl;
+        return;
+    }
 
+    std::cout << "Before drawFrame vkWaitForFences" << std::endl;
     VkResult waitResult = vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
     if (waitResult != VK_SUCCESS)
     {
@@ -66,6 +69,7 @@ void Renderer::drawFrame()
         return;
     }
 
+    std::cout << "Before drawFrame vkResetFences" << std::endl;
     VkResult resetResult = vkResetFences(device, 1, &fence);
     if (resetResult != VK_SUCCESS)
     {
@@ -82,10 +86,10 @@ void Renderer::drawFrame()
                                             VK_NULL_HANDLE,
                                             &imageIndex);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebufferResized)
     {
+        m_framebufferResized = false;
         recreateSwapchain();
-        std::cout << "Recreated swap chain" << std::endl;
         return;
     }
     else if (result == VK_ERROR_DEVICE_LOST)
@@ -159,8 +163,16 @@ void Renderer::drawFrame()
     }
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    // vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-    // vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+
+    if (m_camera && m_scene)
+    {
+        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+        g_frameContext.commandBuffer = commandBuffer;
+        g_frameContext.pipelineLayout = m_pipelineManager.getPipelineLayout();
+        m_scene->update(*m_camera);
+        g_frameContext = {};
+    }
+
     vkCmdEndRenderPass(commandBuffer);
 
     m_commandBufferManager.endCommandBuffer(commandBuffer);
@@ -214,16 +226,18 @@ void Renderer::drawFrame()
 
 void Renderer::cleanSwapchain()
 {
-    auto device = m_deviceManager.getDevice();
+    auto* device = m_deviceManager.getDevice();
+    auto* command_pool = m_deviceManager.getCommandPool();
+
     m_frameBufferManager.cleanup(device);
-    m_commandBufferManager.cleanup();
+    m_commandBufferManager.cleanup(device, command_pool);
     m_swapchain.cleanup(device);
 }
 
 void Renderer::cleanup()
 {
     cleanSwapchain();
-    auto device = m_deviceManager.getDevice();
+    auto* device = m_deviceManager.getDevice();
     m_synchronization.cleanup(device);
     m_pipelineManager.cleanup(device);
     m_renderPassManager.cleanup(device);
@@ -232,44 +246,7 @@ void Renderer::cleanup()
 
 void Renderer::setViewPort(int width, int height)
 {
-    // Update the viewport.
-    VkViewport viewport = {};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = static_cast<float>(width);
-    viewport.height = static_cast<float>(height);
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    // Update the scissor rectangle.
-    VkRect2D scissor = {};
-    scissor.offset = {0, 0};
-    scissor.extent = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
-
-    // Ensure a valid command buffer recording session
-    VkCommandBuffer commandBuffer = m_commandBufferManager.getCommandBuffers()[m_currentFrame];
-    VkCommandBufferBeginInfo beginInfo = {};
-    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-    // Begin recording if not already in progress
-    VkResult result = vkBeginCommandBuffer(commandBuffer, &beginInfo);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to begin command buffer: " << result << std::endl;
-        return;
-    }
-
-    // Record viewport and scissor commands
-    vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-    vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
-
-    // End command buffer recording
-    result = vkEndCommandBuffer(commandBuffer);
-    if (result != VK_SUCCESS)
-    {
-        std::cerr << "Failed to end command buffer: " << result << std::endl;
-        return;
-    }
+    m_framebufferResized = true;
 }
 
 void Renderer::setBackgroundColor(float r, float g, float b, float a)
@@ -279,7 +256,7 @@ void Renderer::setBackgroundColor(float r, float g, float b, float a)
 
 void Renderer::recreateSwapchain()
 {
-    auto device = m_deviceManager.getDevice();
+    auto* device = m_deviceManager.getDevice();
     vkDeviceWaitIdle(device);
     cleanSwapchain();
     const auto& vulkan_window = *dynamic_cast<const VulkanWindow*>(&BaseRenderer::getWindow());
@@ -287,95 +264,14 @@ void Renderer::recreateSwapchain()
     std::cout << "New size x: " << window_size.x << " y: " << window_size.y << std::endl;
 
     m_swapchain.recreate(m_deviceManager.getPhysicalDevice(), device, m_surface, window_size.x, window_size.y);
-    setViewPort(window_size.x, window_size.y);
+    m_pipelineManager.cleanup(device);
+    m_pipelineManager.initialize(device, m_renderPassManager.getRenderPass(), m_swapchain.getExtent());
     m_frameBufferManager.initialize(device, m_renderPassManager.getRenderPass(), m_swapchain.getImageViews(), m_swapchain.getExtent());
+    vkDeviceWaitIdle(device);
     m_commandBufferManager.initialize(device, m_deviceManager.getCommandPool(), m_swapchain.getImageCount());
 
     m_synchronization.cleanup(device);
     m_synchronization.initialize(device, m_framesInFlight);
-
-    auto imageCount = m_swapchain.getImageCount();
-    std::cout << "image count: " << imageCount << std::endl;
-    auto commandBuffers = m_commandBufferManager.getCommandBuffers();
-    for (size_t i = 0; i < 3; ++i)
-    {
-        assert(commandBuffers[i] != VK_NULL_HANDLE && "Command buffer is not properly initialized!");
-        VkFence& fence = m_synchronization.getInFlightFence(i % m_framesInFlight);
-
-        if (fence == VK_NULL_HANDLE)
-        {
-            throw std::runtime_error("Fence is invalid!");
-        }
-
-        // Check if the fence is signaled before waiting
-        VkResult fenceStatus = vkGetFenceStatus(device, fence);
-        if (fenceStatus == VK_NOT_READY)
-        {
-            std::cout << "Waiting for fence: " << i << std::endl;
-            // Fence is not yet signaled, so wait for it
-            VkResult waitResult = vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
-            if (waitResult != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to wait for fence!");
-            }
-            std::cout << "Fence wait result: " << waitResult << std::endl;
-        }
-        else if (fenceStatus != VK_SUCCESS)
-        {
-            throw std::runtime_error("Fence status query failed!");
-        }
-
-        VkResult resetResult = vkResetFences(device, 1, &fence);
-        if (resetResult != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to reset fence!");
-        }
-
-        VkResult cmdResetResult = vkResetCommandBuffer(commandBuffers[i], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-        if (cmdResetResult != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to reset command buffer!");
-        }
-    }
-
-    for (size_t i = 0; i < commandBuffers.size(); ++i)
-    {
-        VkFence& fence = m_synchronization.getInFlightFence(i % m_framesInFlight);
-
-        // Ensure fence is signaled
-        VkResult fenceStatus = vkGetFenceStatus(device, fence);
-        if (fenceStatus != VK_SUCCESS)
-        {
-            VkResult waitResult = vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
-            if (waitResult != VK_SUCCESS)
-            {
-                throw std::runtime_error("Failed to wait for fence!");
-            }
-        }
-
-        // Reset the fence
-        VkResult resetResult = vkResetFences(device, 1, &fence);
-        if (resetResult != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to reset fence!");
-        }
-
-        // Reset and re-record the command buffer
-        VkResult cmdResetResult = vkResetCommandBuffer(commandBuffers[i], VK_COMMAND_BUFFER_RESET_RELEASE_RESOURCES_BIT);
-        if (cmdResetResult != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to reset command buffer!");
-        }
-
-        // Begin command buffer recording (ensure no pending state)
-        VkCommandBufferBeginInfo beginInfo = {};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        VkResult cmdBeginResult = vkBeginCommandBuffer(commandBuffers[i], &beginInfo);
-        if (cmdBeginResult != VK_SUCCESS)
-        {
-            throw std::runtime_error("Failed to begin command buffer!");
-        }
-    }
 }
 
 } // namespace spear::rendering::vulkan

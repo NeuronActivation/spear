@@ -12,7 +12,7 @@ class CommandBufferManager
 {
 public:
     void initialize(VkDevice device, VkCommandPool commandPool, uint32_t commandBufferCount);
-    void cleanup();
+    void cleanup(VkDevice device, VkCommandPool commandPool);
 
     void beginCommandBuffer(uint32_t image_index);
     void endCommandBuffer(VkCommandBuffer commandBuffer);

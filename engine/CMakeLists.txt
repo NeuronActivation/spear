@@ -86,6 +86,11 @@ set(SOURCES
 
     # Rendering Vulkan
     src/rendering/vulkan/renderer.cc
+    src/rendering/vulkan/mesh.cc
+    src/rendering/vulkan/frame_context.cc
+
+    # Rendering Vulkan Shapes
+    src/rendering/vulkan/shapes/cube.cc
 
     # Rendering Vulkan core
     src/rendering/vulkan/core/command_buffer_manager.cc

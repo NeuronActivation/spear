@@ -1,6 +1,7 @@
 #ifndef SPEAR_RENDERING_VULKAN_RENDERER_HH
 #define SPEAR_RENDERING_VULKAN_RENDERER_HH
 
+#include <spear/camera.hh>
 #include <spear/rendering/base_renderer.hh>
 #include <spear/window/vulkan_window.hh>
 
@@ -11,6 +12,8 @@
 #include <spear/rendering/vulkan/core/render_pass_manager.hh>
 #include <spear/rendering/vulkan/core/swapchain.hh>
 #include <spear/rendering/vulkan/core/synchronization.hh>
+
+namespace spear { class Scene; }
 
 namespace spear::rendering::vulkan
 {
@@ -31,6 +34,12 @@ public:
 
     void drawFrame();
 
+    void setCamera(Camera* camera) { m_camera = camera; }
+    void setScene(Scene* scene) { m_scene = scene; }
+
+    VkDevice getDevice() { return m_deviceManager.getDevice(); }
+    VkPhysicalDevice getPhysicalDevice() { return m_deviceManager.getPhysicalDevice(); }
+
 private:
     void cleanSwapchain();
     void cleanup();
@@ -49,6 +58,10 @@ private:
 
     uint64_t m_currentFrame = 0;
     uint64_t m_framesInFlight = 2;
+    bool m_framebufferResized = false;
+
+    Camera* m_camera = nullptr;
+    Scene* m_scene = nullptr;
 
     VkInstance m_instance;
     VkSurfaceKHR m_surface;

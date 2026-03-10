@@ -44,9 +44,14 @@ void CommandBufferManager::endCommandBuffer(VkCommandBuffer commandBuffer)
     }
 }
 
-void CommandBufferManager::cleanup()
+void CommandBufferManager::cleanup(VkDevice device, VkCommandPool commandPool)
 {
-    m_commandBuffers.clear();
+    vkDeviceWaitIdle(device);
+    if (!m_commandBuffers.empty())
+    {
+        vkFreeCommandBuffers(device, commandPool, static_cast<uint32_t>(m_commandBuffers.size()), m_commandBuffers.data());
+        m_commandBuffers.clear();
+    }
 }
 
 } // namespace spear::rendering::vulkan
