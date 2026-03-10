@@ -1,6 +1,7 @@
 #include <spear/physics/bullet/object_data.hh>
 #include <spear/rendering/opengl/error.hh>
 #include <spear/rendering/opengl/model/obj_model.hh>
+#include <spear/rendering/opengl/shader.hh>
 
 #include <GL/glew.h>
 

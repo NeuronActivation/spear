@@ -1,5 +1,5 @@
-#include <spear/rendering/vulkan/renderer.hh>
 #include <spear/rendering/vulkan/frame_context.hh>
+#include <spear/rendering/vulkan/renderer.hh>
 #include <spear/scene.hh>
 
 #include <glm/vec2.hpp>
@@ -10,7 +10,6 @@
 
 namespace spear::rendering::vulkan
 {
-
 
 Renderer::Renderer(VulkanWindow& vulkan_window)
     : BaseRenderer(vulkan_window)

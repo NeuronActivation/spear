@@ -1,4 +1,5 @@
 #include <spear/rendering/opengl/error.hh>
+#include <spear/rendering/opengl/shader.hh>
 #include <spear/rendering/opengl/shapes/cube.hh>
 
 #include <GL/glew.h>

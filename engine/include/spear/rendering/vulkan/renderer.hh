@@ -13,7 +13,10 @@
 #include <spear/rendering/vulkan/core/swapchain.hh>
 #include <spear/rendering/vulkan/core/synchronization.hh>
 
-namespace spear { class Scene; }
+namespace spear
+{
+class Scene;
+}
 
 namespace spear::rendering::vulkan
 {
@@ -34,11 +37,23 @@ public:
 
     void drawFrame();
 
-    void setCamera(Camera* camera) { m_camera = camera; }
-    void setScene(Scene* scene) { m_scene = scene; }
+    void setCamera(Camera* camera)
+    {
+        m_camera = camera;
+    }
+    void setScene(Scene* scene)
+    {
+        m_scene = scene;
+    }
 
-    VkDevice getDevice() { return m_deviceManager.getDevice(); }
-    VkPhysicalDevice getPhysicalDevice() { return m_deviceManager.getPhysicalDevice(); }
+    VkDevice getDevice()
+    {
+        return m_deviceManager.getDevice();
+    }
+    VkPhysicalDevice getPhysicalDevice()
+    {
+        return m_deviceManager.getPhysicalDevice();
+    }
 
 private:
     void cleanSwapchain();

@@ -1,5 +1,5 @@
-#include <spear/rendering/vulkan/shapes/cube.hh>
 #include <spear/rendering/vulkan/frame_context.hh>
+#include <spear/rendering/vulkan/shapes/cube.hh>
 
 #include <glm/mat4x4.hpp>
 
@@ -36,7 +36,7 @@ Cube::Cube(VkDevice device,
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memReq.size;
     allocInfo.memoryTypeIndex = findMemoryType(physDevice, memReq.memoryTypeBits,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                                               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     if (vkAllocateMemory(device, &allocInfo, nullptr, &m_vertexMemory) != VK_SUCCESS)
         throw std::runtime_error("Cube: failed to allocate vertex buffer memory!");
@@ -70,8 +70,8 @@ void Cube::render(Camera& camera)
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(cmd, 0, 1, buffers, offsets);
     vkCmdPushConstants(cmd, layout,
-        VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-        0, sizeof(glm::mat4), &mvp);
+                       VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                       0, sizeof(glm::mat4), &mvp);
     vkCmdDraw(cmd, m_vertexCount, 1, 0, 0);
 }
 
@@ -80,12 +80,12 @@ std::vector<Cube::Vertex> Cube::createVertices() const
     const float s = 1.0f;
     // Face colors tinted by m_color.rgb; default white tint preserves the base face colors.
     const glm::vec3 tint = glm::vec3(m_color);
-    const glm::vec3 red   = tint * glm::vec3(1, 0.2f, 0.2f);
+    const glm::vec3 red = tint * glm::vec3(1, 0.2f, 0.2f);
     const glm::vec3 green = tint * glm::vec3(0.2f, 1, 0.2f);
-    const glm::vec3 blue  = tint * glm::vec3(0.2f, 0.2f, 1);
-    const glm::vec3 yel   = tint * glm::vec3(1, 1, 0.2f);
-    const glm::vec3 cyan  = tint * glm::vec3(0.2f, 1, 1);
-    const glm::vec3 mag   = tint * glm::vec3(1, 0.2f, 1);
+    const glm::vec3 blue = tint * glm::vec3(0.2f, 0.2f, 1);
+    const glm::vec3 yel = tint * glm::vec3(1, 1, 0.2f);
+    const glm::vec3 cyan = tint * glm::vec3(0.2f, 1, 1);
+    const glm::vec3 mag = tint * glm::vec3(1, 0.2f, 1);
 
     // clang-format off
     return {

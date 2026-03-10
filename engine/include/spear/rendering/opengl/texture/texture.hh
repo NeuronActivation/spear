@@ -35,6 +35,11 @@ public:
     /// BaseTexture::bind implementation.
     void unbind(uint32_t unit = 0) override;
 
+    uint32_t getId() const
+    {
+        return m_texture;
+    }
+
 protected:
     uint32_t m_texture;
 };

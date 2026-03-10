@@ -2,6 +2,7 @@
 #define SPEAR_RENDERING_OPENGL_SHAPES_CUBE_HH
 
 #include <spear/camera.hh>
+#include <spear/rendering/opengl/texture/texture.hh>
 #include <spear/rendering/shapes/textured_shape.hh>
 
 #include <vector>

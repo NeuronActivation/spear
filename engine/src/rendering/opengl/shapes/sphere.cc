@@ -1,6 +1,7 @@
 #include "spear/physics/bullet/object_data.hh"
 #include <GL/glew.h>
 #include <cmath>
+#include <spear/rendering/opengl/shader.hh>
 #include <spear/rendering/opengl/shapes/sphere.hh>
 
 namespace spear::rendering::opengl
