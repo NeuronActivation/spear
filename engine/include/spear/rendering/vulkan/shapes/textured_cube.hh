@@ -45,8 +45,8 @@ public:
                                                 const glm::vec4& color = glm::vec4(1.0f, 1.0f, 1.0f, 1.0f))
     {
         return std::make_unique<TexturedCube>(device, physDevice, std::move(texture),
-                                             descriptorPool, descriptorSetLayout,
-                                             std::move(object_data), color);
+                                              descriptorPool, descriptorSetLayout,
+                                              std::move(object_data), color);
     }
 
 private:

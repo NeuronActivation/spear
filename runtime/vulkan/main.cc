@@ -53,7 +53,7 @@ int main()
 
     // --- Texture ---
     auto texture = std::make_shared<vulkan::STBTexture>(
-        device, physDevice, renderer.getCommandPool(), renderer.getGraphicsQueue());
+            device, physDevice, renderer.getCommandPool(), renderer.getGraphicsQueue());
     texture->loadFromFile(spear::getAssetPath("wallnut.jpg"));
 
     // clang-format off

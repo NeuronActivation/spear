@@ -1,5 +1,5 @@
-#include <spear/rendering/vulkan/shapes/textured_cube.hh>
 #include <spear/rendering/vulkan/frame_context.hh>
+#include <spear/rendering/vulkan/shapes/textured_cube.hh>
 
 #include <glm/mat4x4.hpp>
 
@@ -96,7 +96,7 @@ void TexturedCube::replaceVertexBuffer(VkPhysicalDevice physDevice)
     allocInfo.allocationSize = memReq.size;
     allocInfo.memoryTypeIndex = findMemoryType(physDevice, memReq.memoryTypeBits,
                                                VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                                               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+                                                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     if (vkAllocateMemory(Cube::m_device, &allocInfo, nullptr, &m_vertexMemory) != VK_SUCCESS)
         throw std::runtime_error("TexturedCube: failed to allocate vertex buffer memory!");
