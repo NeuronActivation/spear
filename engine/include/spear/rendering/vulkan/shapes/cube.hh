@@ -37,7 +37,7 @@ public:
         return std::make_unique<Cube>(device, physDevice, std::move(object_data), color);
     }
 
-private:
+protected:
     struct Vertex
     {
         glm::vec3 position;
@@ -47,7 +47,6 @@ private:
     std::vector<Vertex> createVertices() const;
     uint32_t findMemoryType(VkPhysicalDevice physDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
-private:
     VkDevice m_device;
     VkBuffer m_vertexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory m_vertexMemory = VK_NULL_HANDLE;

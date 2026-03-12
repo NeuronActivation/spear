@@ -7,11 +7,18 @@ namespace spear::rendering::vulkan
 {
 
 // Set by the renderer at the start of each render pass, cleared at the end.
-// Vulkan shapes read this in render(Camera&), mirroring OpenGL's implicit context.
+// Vulkan shapes read this in render(Camera&) to bind their pipeline and record draws.
 struct FrameContext
 {
     VkCommandBuffer commandBuffer = VK_NULL_HANDLE;
-    VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
+
+    // Color (untextured) pipeline — used by Cube.
+    VkPipeline colorPipeline = VK_NULL_HANDLE;
+    VkPipelineLayout colorPipelineLayout = VK_NULL_HANDLE;
+
+    // Textured pipeline — used by TexturedCube.
+    VkPipeline texturedPipeline = VK_NULL_HANDLE;
+    VkPipelineLayout texturedPipelineLayout = VK_NULL_HANDLE;
 };
 
 extern FrameContext g_frameContext;

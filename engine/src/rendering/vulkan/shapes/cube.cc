@@ -60,9 +60,12 @@ Cube::~Cube()
 void Cube::render(Camera& camera)
 {
     VkCommandBuffer cmd = g_frameContext.commandBuffer;
-    VkPipelineLayout layout = g_frameContext.pipelineLayout;
-    if (cmd == VK_NULL_HANDLE || layout == VK_NULL_HANDLE)
+    VkPipeline pipeline = g_frameContext.colorPipeline;
+    VkPipelineLayout layout = g_frameContext.colorPipelineLayout;
+    if (cmd == VK_NULL_HANDLE || pipeline == VK_NULL_HANDLE || layout == VK_NULL_HANDLE)
         return;
+
+    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 
     glm::mat4 mvp = camera.getProjectionMatrix() * camera.getViewMatrix() * Transform::getModel();
 

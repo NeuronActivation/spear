@@ -35,6 +35,10 @@ public:
     void setBackgroundColor(float r, float g, float b, float a) override;
     void init() override;
 
+    /// Initialize the textured rendering pipeline. Call once after construction,
+    /// passing the descriptor set layout created via Texture::createDescriptorSetLayout().
+    void initializeTexturedPipeline(VkDescriptorSetLayout descriptorSetLayout);
+
     void drawFrame();
 
     void setCamera(Camera* camera)
@@ -54,6 +58,14 @@ public:
     {
         return m_deviceManager.getPhysicalDevice();
     }
+    VkCommandPool getCommandPool()
+    {
+        return m_deviceManager.getCommandPool();
+    }
+    VkQueue getGraphicsQueue()
+    {
+        return m_deviceManager.getGraphicsQueue();
+    }
 
 private:
     void cleanSwapchain();
@@ -70,6 +82,8 @@ private:
     PipelineManager m_pipelineManager;
     RenderPassManager m_renderPassManager;
     Synchronization m_synchronization;
+
+    VkDescriptorSetLayout m_texturedDescriptorSetLayout = VK_NULL_HANDLE;
 
     uint64_t m_currentFrame = 0;
     uint64_t m_framesInFlight = 2;

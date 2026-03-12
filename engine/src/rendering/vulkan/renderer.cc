@@ -36,6 +36,15 @@ void Renderer::init()
 {
 }
 
+void Renderer::initializeTexturedPipeline(VkDescriptorSetLayout descriptorSetLayout)
+{
+    m_texturedDescriptorSetLayout = descriptorSetLayout;
+    m_pipelineManager.initializeTextured(m_deviceManager.getDevice(),
+                                         m_renderPassManager.getRenderPass(),
+                                         m_swapchain.getExtent(),
+                                         descriptorSetLayout);
+}
+
 void Renderer::render()
 {
     drawFrame();
@@ -155,19 +164,18 @@ void Renderer::drawFrame()
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues = clearValues.data();
 
-    auto pipeline = m_pipelineManager.getPipeline();
-    if (pipeline == VK_NULL_HANDLE)
-    {
-        throw std::runtime_error("Pipeline is null");
-    }
+    if (m_pipelineManager.getPipeline() == VK_NULL_HANDLE)
+        throw std::runtime_error("Color pipeline is null");
 
     vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
     if (m_camera && m_scene)
     {
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
         g_frameContext.commandBuffer = commandBuffer;
-        g_frameContext.pipelineLayout = m_pipelineManager.getPipelineLayout();
+        g_frameContext.colorPipeline = m_pipelineManager.getPipeline();
+        g_frameContext.colorPipelineLayout = m_pipelineManager.getPipelineLayout();
+        g_frameContext.texturedPipeline = m_pipelineManager.getTexturedPipeline();
+        g_frameContext.texturedPipelineLayout = m_pipelineManager.getTexturedPipelineLayout();
         m_scene->update(*m_camera);
         g_frameContext = {};
     }
@@ -265,6 +273,8 @@ void Renderer::recreateSwapchain()
     m_swapchain.recreate(m_deviceManager.getPhysicalDevice(), device, m_surface, window_size.x, window_size.y);
     m_pipelineManager.cleanup(device);
     m_pipelineManager.initialize(device, m_renderPassManager.getRenderPass(), m_swapchain.getExtent());
+    if (m_texturedDescriptorSetLayout != VK_NULL_HANDLE)
+        m_pipelineManager.initializeTextured(device, m_renderPassManager.getRenderPass(), m_swapchain.getExtent(), m_texturedDescriptorSetLayout);
     m_frameBufferManager.initialize(device, m_renderPassManager.getRenderPass(), m_swapchain.getImageViews(), m_swapchain.getExtent());
     vkDeviceWaitIdle(device);
     m_commandBufferManager.initialize(device, m_deviceManager.getCommandPool(), m_swapchain.getImageCount());

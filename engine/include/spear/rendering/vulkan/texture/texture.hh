@@ -32,6 +32,34 @@ public:
     void bind(uint32_t unit = 0) const override;
     void unbind(uint32_t unit = 0) override;
 
+    VkImageView getImageView() const
+    {
+        return m_imageView;
+    }
+    VkSampler getSampler() const
+    {
+        return m_sampler;
+    }
+
+    /// Create a descriptor pool that holds \p maxSets combined-image-sampler descriptors.
+    static VkDescriptorPool createDescriptorPool(VkDevice device, uint32_t maxSets);
+
+    /// Create a descriptor set layout with a single combined-image-sampler at binding 0
+    /// (fragment stage).
+    static VkDescriptorSetLayout createDescriptorSetLayout(VkDevice device);
+
+    /// Allocate a descriptor set from \p pool and write a combined-image-sampler
+    /// at binding 0 using the provided \p imageView and \p sampler.
+    void createDescriptorSet(VkDescriptorPool pool,
+                             VkDescriptorSetLayout layout,
+                             VkImageView imageView,
+                             VkSampler sampler);
+
+    /// Bind the descriptor set at the given \p set index.
+    void bindDescriptorSet(VkCommandBuffer cmd,
+                           VkPipelineLayout pipelineLayout,
+                           uint32_t set = 0) const;
+
 protected:
     void cleanup();
 
@@ -41,6 +69,7 @@ protected:
     VkDeviceMemory m_imageMemory;
     VkImageView m_imageView;
     VkSampler m_sampler;
+    VkDescriptorSet m_descriptorSet;
 };
 
 } // namespace spear::rendering::vulkan

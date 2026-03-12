@@ -3,12 +3,15 @@
 #include <spear/event_handler.hh>
 #include <spear/movement_controller.hh>
 #include <spear/scene_manager.hh>
+#include <spear/spear_root.hh>
 #include <spear/time.hh>
 
 #include <spear/physics/bullet/world.hh>
 
 #include <spear/rendering/vulkan/renderer.hh>
 #include <spear/rendering/vulkan/shapes/cube.hh>
+#include <spear/rendering/vulkan/shapes/textured_cube.hh>
+#include <spear/rendering/vulkan/texture/stb_texture.hh>
 #include <spear/window/vulkan_window.hh>
 
 #include <iostream>
@@ -38,11 +41,32 @@ int main()
     renderer.setBackgroundColor(0.1f, 0.1f, 0.15f, 1.0f);
     renderer.setCamera(&camera);
 
+    VkDevice device = renderer.getDevice();
+    VkPhysicalDevice physDevice = renderer.getPhysicalDevice();
+
+    // --- Descriptor pool + layout (owned here, lifetime matches the app) ---
+    VkDescriptorPool descriptorPool = vulkan::Texture::createDescriptorPool(device, 8);
+    VkDescriptorSetLayout descriptorSetLayout = vulkan::Texture::createDescriptorSetLayout(device);
+
+    // Initialize the textured pipeline using the sampler layout.
+    renderer.initializeTexturedPipeline(descriptorSetLayout);
+
+    // --- Texture ---
+    auto texture = std::make_shared<vulkan::STBTexture>(
+        device, physDevice, renderer.getCommandPool(), renderer.getGraphicsQueue());
+    texture->loadFromFile(spear::getAssetPath("wallnut.jpg"));
+
     // clang-format off
     auto scene_objects = spear::Scene::Container{
         std::make_shared<vulkan::Cube>(
-            renderer.getDevice(), renderer.getPhysicalDevice(),
-            bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(0.0f, 0.0f, 0.0f), default_size))
+            device, physDevice,
+            bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(-1.5f, 0.0f, 0.0f), default_size)),
+
+        std::make_shared<vulkan::TexturedCube>(
+            device, physDevice,
+            texture,
+            descriptorPool, descriptorSetLayout,
+            bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(1.5f, 0.0f, 0.0f), default_size)),
     };
     // clang-format on
 
@@ -55,9 +79,19 @@ int main()
     // clang-format off
     spear::EventHandler eventHandler;
 
-    eventHandler.handleInput(SDLK_ESCAPE, []() { exit(0); });
+    eventHandler.handleInput(SDLK_ESCAPE, [&device, &descriptorPool, &descriptorSetLayout]()
+    {
+        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+        exit(0);
+    });
 
-    eventHandler.registerCallback(SDL_EVENT_QUIT, [](const SDL_Event&) { exit(0); });
+    eventHandler.registerCallback(SDL_EVENT_QUIT, [&device, &descriptorPool, &descriptorSetLayout](const SDL_Event&)
+    {
+        vkDestroyDescriptorSetLayout(device, descriptorSetLayout, nullptr);
+        vkDestroyDescriptorPool(device, descriptorPool, nullptr);
+        exit(0);
+    });
 
     eventHandler.registerCallback(SDL_EVENT_MOUSE_MOTION, [&camera](const SDL_Event& event)
                                   { camera.rotate(event.motion.xrel, event.motion.yrel); });

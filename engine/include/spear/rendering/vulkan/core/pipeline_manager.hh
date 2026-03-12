@@ -16,16 +16,28 @@ class PipelineManager
 {
 public:
     void initialize(VkDevice device, VkRenderPass renderPass, VkExtent2D extent);
+    void initializeTextured(VkDevice device,
+                            VkRenderPass renderPass,
+                            VkExtent2D extent,
+                            VkDescriptorSetLayout descriptorSetLayout);
     void cleanup(VkDevice device);
 
     VkPipeline getPipeline() const
     {
         return m_graphicsPipeline;
     }
-
     VkPipelineLayout getPipelineLayout() const
     {
         return m_pipelineLayout;
+    }
+
+    VkPipeline getTexturedPipeline() const
+    {
+        return m_texturedPipeline;
+    }
+    VkPipelineLayout getTexturedPipelineLayout() const
+    {
+        return m_texturedPipelineLayout;
     }
 
 private:
@@ -36,6 +48,9 @@ private:
 private:
     VkPipeline m_graphicsPipeline = VK_NULL_HANDLE;
     VkPipelineLayout m_pipelineLayout = VK_NULL_HANDLE;
+
+    VkPipeline m_texturedPipeline = VK_NULL_HANDLE;
+    VkPipelineLayout m_texturedPipelineLayout = VK_NULL_HANDLE;
 };
 
 } // namespace spear::rendering::vulkan
