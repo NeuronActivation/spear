@@ -5,9 +5,7 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 
-#include <fstream>
 #include <iostream>
-#include <sstream>
 
 namespace spear::rendering::opengl
 {
@@ -15,37 +13,8 @@ namespace spear::rendering::opengl
 Shader::Shader(ShaderType type)
 {
     rendering::opengl::openglError("before opengl shader contructor");
-    auto data = getShaderFiles(type, API::OpenGL);
 
-    std::ifstream v_shader_file;
-    std::ifstream f_shader_file;
-
-    v_shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    f_shader_file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-    try
-    {
-        // Open files.
-        v_shader_file.open(data.vertex_shader);
-        f_shader_file.open(data.fragment_shader);
-        std::stringstream vShaderStream, fShaderStream;
-
-        // Read file's buffer contents into streams.
-        vShaderStream << v_shader_file.rdbuf();
-        fShaderStream << f_shader_file.rdbuf();
-
-        // Close file handlers.
-        v_shader_file.close();
-        f_shader_file.close();
-
-        // Convert into string.
-        m_vertexCode = vShaderStream.str();
-        m_fragmentCode = fShaderStream.str();
-    }
-    catch (const std::ifstream::failure& e)
-    {
-        printf("ERROR::SHADER::FILE_NOT_SUCCESFULLY_READ\n");
-    }
+    loadShaderFiles(type, API::OpenGL);
 
     rendering::opengl::openglError("before compiling shaders");
 
@@ -82,8 +51,6 @@ Shader::~Shader()
 
 Shader::Shader(Shader&& other)
     : BaseShader(std::move(other)),
-      m_vertexCode(std::move(other.m_vertexCode)),
-      m_fragmentCode(std::move(other.m_fragmentCode)),
       m_vertexId(std::move(other.m_vertexId)),
       m_fragmentId(std::move(other.m_fragmentId))
 {
@@ -94,12 +61,34 @@ Shader& Shader::operator=(Shader&& other)
     if (this != &other)
     {
         BaseShader::operator=(std::move(other));
-        m_vertexCode = std::move(other.m_vertexCode);
-        m_fragmentCode = std::move(other.m_fragmentCode);
         m_vertexId = std::move(other.m_vertexId);
         m_fragmentId = std::move(other.m_fragmentId);
     }
     return *this;
+}
+
+void Shader::checkCompileErrors(uint32_t shader, const std::string& type)
+{
+    GLint success;
+    GLchar infoLog[1024];
+    if (type == "PROGRAM")
+    {
+        glGetProgramiv(shader, GL_LINK_STATUS, &success);
+        if (!success)
+        {
+            glGetProgramInfoLog(shader, 1024, NULL, infoLog);
+            std::cerr << "ERROR::SHADER_PROGRAM::LINKING_FAILED\n" << infoLog << std::endl;
+        }
+    }
+    else
+    {
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+        if (!success)
+        {
+            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+            std::cerr << "ERROR::SHADER::" << type << "::COMPILATION_FAILED\n" << infoLog << std::endl;
+        }
+    }
 }
 
 int Shader::getLocation(const std::string& name)

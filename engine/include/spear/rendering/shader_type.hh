@@ -1,8 +1,9 @@
 #ifndef SPEAR_RENDERING_SHADER_TYPE_HH
 #define SPEAR_RENDERING_SHADER_TYPE_HH
 
+#include <string>
+
 #include <spear/rendering/api.hh>
-#include <spear/rendering/base_shader.hh>
 
 namespace spear::rendering
 {

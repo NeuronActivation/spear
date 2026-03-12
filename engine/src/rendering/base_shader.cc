@@ -1,13 +1,17 @@
 #include <spear/rendering/base_shader.hh>
+#include <spear/rendering/shader_type.hh>
 
-#include <GL/glew.h>
+#include <fstream>
 #include <iostream>
+#include <sstream>
 
 namespace spear::rendering
 {
 
 BaseShader::BaseShader(BaseShader&& other)
-    : m_id(std::move(other.m_id))
+    : m_vertexCode(std::move(other.m_vertexCode)),
+      m_fragmentCode(std::move(other.m_fragmentCode)),
+      m_id(std::move(other.m_id))
 {
 }
 
@@ -15,40 +19,42 @@ BaseShader& BaseShader::operator=(BaseShader&& other)
 {
     if (this != &other)
     {
+        m_vertexCode = std::move(other.m_vertexCode);
+        m_fragmentCode = std::move(other.m_fragmentCode);
         m_id = std::move(other.m_id);
     }
     return *this;
 }
 
-void BaseShader::checkCompileErrors(uint32_t shader, const std::string& type)
-{
-    GLint success;
-    GLchar infoLog[1024];
-    if (type == "PROGRAM")
-    {
-        glGetProgramiv(shader, GL_LINK_STATUS, &success);
-        if (!success)
-        {
-            glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-            std::cerr << "ERROR::SHADER_PROGRAM::LINKING_FAILED\n"
-                      << infoLog << std::endl;
-        }
-    }
-    else
-    {
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-        if (!success)
-        {
-            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-            std::cerr << "ERROR::SHADER::" << type << "::COMPILATION_FAILED\n"
-                      << infoLog << std::endl;
-        }
-    }
-}
-
 BaseShader::~BaseShader()
 {
     // TODO
+}
+
+std::string BaseShader::readFile(const std::string& filepath)
+{
+    std::ifstream file;
+    file.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    try
+    {
+        file.open(filepath);
+        std::stringstream stream;
+        stream << file.rdbuf();
+        file.close();
+        return stream.str();
+    }
+    catch (const std::ifstream::failure&)
+    {
+        std::cerr << "ERROR::SHADER::FILE_NOT_SUCCESSFULLY_READ: " << filepath << std::endl;
+        return {};
+    }
+}
+
+void BaseShader::loadShaderFiles(ShaderType type, API api)
+{
+    auto data = getShaderFiles(type, api);
+    m_vertexCode = readFile(data.vertex_shader);
+    m_fragmentCode = readFile(data.fragment_shader);
 }
 
 } // namespace spear::rendering

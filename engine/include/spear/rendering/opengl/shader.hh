@@ -65,10 +65,9 @@ public:
 
 private:
     int getLocation(const std::string& name);
+    void checkCompileErrors(uint32_t shader, const std::string& type);
 
 private:
-    std::string m_vertexCode;
-    std::string m_fragmentCode;
     uint32_t m_vertexId;
     uint32_t m_fragmentId;
 };

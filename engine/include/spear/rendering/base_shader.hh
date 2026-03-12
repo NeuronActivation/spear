@@ -7,6 +7,9 @@
 
 #include <glm/mat4x4.hpp>
 
+#include <spear/rendering/api.hh>
+#include <spear/rendering/shader_type.hh>
+
 namespace spear::rendering
 {
 
@@ -59,12 +62,19 @@ public:
     virtual void createShaderProgram() = 0;
 
 protected:
-    void checkCompileErrors(uint32_t shader, const std::string& type);
+    /// Read shader files for the given type and API into m_vertexCode / m_fragmentCode.
+    void loadShaderFiles(ShaderType type, API api);
+
+    /// Read a single file into a string.
+    static std::string readFile(const std::string& filepath);
 
     void setId(uint32_t id)
     {
         m_id = id;
     }
+
+    std::string m_vertexCode;
+    std::string m_fragmentCode;
 
 private:
     uint32_t m_id = 0;

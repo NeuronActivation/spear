@@ -74,6 +74,23 @@ ShaderFileData getShaderFiles(ShaderType type, API api)
             break;
         }
         case API::Vulkan:
+        {
+            switch (type)
+            {
+                case ShaderType::basic:
+                case ShaderType::lighting:
+                case ShaderType::sprite3D:
+                case ShaderType::quad:
+                case ShaderType::cube:
+                case ShaderType::material:
+                {
+                    std::string vertexPath = spearRoot() + "/shaders/minimal_vulkan_vertex.glsl";
+                    std::string fragPath = spearRoot() + "/shaders/minimal_vulkan_fragment.glsl";
+                    return {vertexPath, fragPath};
+                }
+            }
+            break;
+        }
         case API::Metal:
         case API::DirectX12:
             break;
