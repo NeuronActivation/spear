@@ -1,18 +1,4 @@
-#include <spear/camera.hh>
-#include <spear/create_scene.hh>
-#include <spear/event_handler.hh>
-#include <spear/movement_controller.hh>
-#include <spear/scene_manager.hh>
-#include <spear/spear_root.hh>
-#include <spear/time.hh>
-
-#include <spear/physics/bullet/world.hh>
-
-#include <spear/rendering/vulkan/renderer.hh>
-#include <spear/rendering/vulkan/shapes/cube.hh>
-#include <spear/rendering/vulkan/shapes/textured_cube.hh>
-#include <spear/rendering/vulkan/texture/stb_texture.hh>
-#include <spear/window/vulkan_window.hh>
+#include <spear/spear.hh>
 
 #include <iostream>
 
@@ -58,10 +44,6 @@ int main()
 
     // clang-format off
     auto scene_objects = spear::Scene::Container{
-        std::make_shared<vulkan::Cube>(
-            device, physDevice,
-            bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(-1.5f, 0.0f, 0.0f), default_size)),
-
         std::make_shared<vulkan::TexturedCube>(
             device, physDevice,
             texture,
@@ -73,7 +55,6 @@ int main()
     auto scene_function = [](spear::Scene::Container&) {};
     auto scene_id = spear::createScene(scene_objects, scene_function, scene_manager);
     scene_manager.loadScene(scene_id);
-
     spear::Time time_interface;
 
     // clang-format off
