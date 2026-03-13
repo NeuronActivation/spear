@@ -12,12 +12,12 @@ static const std::string spearRoot()
     return SPEAR_ROOT;
 }
 
-static std::string getAssetPath(const std::string& file_name)
+static std::string getAssetPath(const std::string& file_name = "")
 {
     return spearRoot() + "/assets/" + file_name;
 }
 
-static std::string getShaderPath(const std::string& shader_name)
+static std::string getShaderPath(const std::string& shader_name = "")
 {
     return spearRoot() + "/shaders/" + shader_name;
 }
