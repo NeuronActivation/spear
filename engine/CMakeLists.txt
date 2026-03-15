@@ -20,7 +20,6 @@ pkg_check_modules(SHADERC REQUIRED shaderc_combined)
 add_compile_options(-Wall -Wextra -pedantic -std=c++20)
 
 set(SPEAR_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
-add_compile_definitions(SPEAR_ROOT="${SPEAR_ROOT}")
 
 file(GLOB_RECURSE SOURCES "src/*.cc")
 
@@ -32,6 +31,7 @@ include_directories(${SDL_INCLUDE_DIRS} ${SDL3_IMAGE_INCLUDE_DIRS} ${GLEW_INCLUD
 
 add_library(spear ${SOURCES})
 target_include_directories(spear PUBLIC include PUBLIC ${BULLET_INCLUDE_DIRS} PRIVATE ${VULKAN_INCLUDE_DIRS})
+target_compile_definitions(spear PUBLIC SPEAR_ROOT="${SPEAR_ROOT}")
 
 target_link_libraries(spear
     PRIVATE SDL3::SDL3 SDL3_image::SDL3_image
