@@ -1,14 +1,17 @@
-#include <spear/rendering/base_shader.hh>
-#include <spear/sprite_3d.hh>
+#include <spear/rendering/opengl/sprite_3d.hh>
 
-namespace spear
+#include <spear/mesh.hh>
+#include <spear/rendering/opengl/shader.hh>
+
+#include <GL/glew.h>
+
+namespace spear::rendering::opengl
 {
 
-Sprite3D::Sprite3D(glm::vec3 position)
-    : Mesh(std::shared_ptr<rendering::BaseShader>(rendering::opengl::Shader::create(rendering::ShaderType::sprite3D))), Transform(),
-      m_texture("niilo.jpg"), m_position(position), m_sampler(GL_TEXTURE_2D)
+Sprite3D::Sprite3D(glm::vec3 position, std::shared_ptr<rendering::BaseTexture> texture)
+    : BaseSprite3D(position, texture, std::shared_ptr<BaseShader>(Shader::create(ShaderType::sprite3D))),
+      m_sampler(GL_TEXTURE_2D)
 {
-    Transform::translate(m_position);
 }
 
 Sprite3D::~Sprite3D()
@@ -23,7 +26,7 @@ Sprite3D::~Sprite3D()
 
 void Sprite3D::render(Camera& camera)
 {
-    m_texture.bind();
+    m_texture->bind();
 
     Mesh::m_shader->use();
     glm::mat4 mvp = Transform::getModel() * camera.getViewMatrix() * camera.getProjectionMatrix();
@@ -60,5 +63,4 @@ void Sprite3D::initialize()
 
     glBindVertexArray(0);
 }
-
-} // namespace spear
+} // namespace spear::rendering::opengl
