@@ -3,6 +3,7 @@
 
 #include <glm/mat4x4.hpp>
 
+#include <algorithm>
 #include <cstring>
 #include <stdexcept>
 
@@ -141,6 +142,7 @@ std::vector<OBJModel::Vertex> OBJModel::buildVertices()
     std::vector<Vertex> vertices;
     for (const auto& face : m_loader.getFaces())
     {
+        std::vector<Vertex> tri;
         for (size_t i = 0; i < face.vertexIndices.size(); ++i)
         {
             Vertex v{};
@@ -153,8 +155,13 @@ std::vector<OBJModel::Vertex> OBJModel::buildVertices()
                 v.uv = {uvs[ti].u, uvs[ti].v};
             }
 
-            vertices.push_back(v);
+            tri.push_back(v);
         }
+        // Reverse winding (swap v1 and v2) so that after the shader's Y-flip
+        // the triangles are CW in Vulkan framebuffer space (VK_FRONT_FACE_CLOCKWISE).
+        if (tri.size() == 3)
+            std::swap(tri[1], tri[2]);
+        vertices.insert(vertices.end(), tri.begin(), tri.end());
     }
     return vertices;
 }

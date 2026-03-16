@@ -46,6 +46,12 @@ int main()
 
         std::make_shared<spear::rendering::opengl::Sprite3D>(
             wallnut_texture, spear::physics::bullet::ObjectData(shared_bullet_world, 0.0f, glm::vec3(-1.5f, 0.0f, 0.0f), default_size)),
+
+        std::make_shared<spear::rendering::opengl::OBJModel>(
+            "/cube_pets/Models/OBJ-format/animal-bunny.obj", "/cube_pets/Models/OBJ-format/animal-bunny.mtl",
+            niilo_texture,
+            spear::physics::bullet::ObjectData(shared_bullet_world, 0.0f, glm::vec3(0.0f, 0.0f, -7.0f), default_size)),
+
     };
 
     auto scene1_function = [](spear::Scene::Container& objects)

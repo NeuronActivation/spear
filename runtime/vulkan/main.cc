@@ -50,6 +50,12 @@ int main()
             niilo,
             descriptorPool, descriptorSetLayout,
             spear::physics::bullet::ObjectData(shared_bullet_world, 0.0f, glm::vec3(-1.5f, 0.0f, 0.0f), default_size)),
+        std::make_shared<spear::rendering::vulkan::OBJModel>(
+            device, physDevice,
+            "/cube_pets/Models/OBJ-format/animal-bunny.obj", "/cube_pets/Models/OBJ-format/animal-bunny.mtl",
+            niilo,
+            descriptorPool, descriptorSetLayout,
+            spear::physics::bullet::ObjectData(shared_bullet_world, 0.0f, glm::vec3(0.0f, 0.0f, -7.0f), default_size)),
     };
     // clang-format on
 
