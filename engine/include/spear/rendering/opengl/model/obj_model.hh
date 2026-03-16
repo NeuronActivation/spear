@@ -57,8 +57,8 @@ private:
     std::shared_ptr<BaseTexture> m_texture;
 
     uint32_t m_vao;
+    uint32_t m_vertexCount = 0;
 
-    std::vector<uint32_t> m_indices;
     ModelLoader::Material m_material;
 
     Light m_light;

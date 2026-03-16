@@ -30,6 +30,10 @@ Object::Object(ObjectData&& object_data)
     btRigidBody::btRigidBodyConstructionInfo rbInfo(object_data.getMass(), m_motionState.get(), m_collisionShape.get(), localInertia);
     m_rigidBody = std::make_unique<btRigidBody>(rbInfo);
     m_dynamicsWorld->addRigidBody(m_rigidBody.get());
+
+    // Sync the render transform with the initial physics position.
+    auto pos = object_data.getPosition();
+    Transform::translate(pos);
 }
 
 Object::Object(Object&& other)

@@ -25,54 +25,68 @@ OBJModel::OBJModel(const std::string& object_file_path, const std::string& mater
 
 void OBJModel::initialize()
 {
+    // Build an interleaved vertex buffer by expanding each face using the correct
+    // per-attribute indices. OBJ files use separate index arrays for positions, UVs,
+    // and normals, so a single shared EBO cannot index all three simultaneously.
+    struct Vertex
+    {
+        float x, y, z;
+        float u, v;
+        float nx, ny, nz;
+    };
+
+    const auto& positions = m_loader.getVertices();
+    const auto& uvs = m_loader.getUvs();
+    const auto& normals = m_loader.getNormals();
+
+    std::vector<Vertex> vertices;
+    for (const auto& face : m_loader.getFaces())
+    {
+        for (size_t i = 0; i < face.vertexIndices.size(); ++i)
+        {
+            Vertex v{};
+            int vi = face.vertexIndices[i];
+            v.x = positions[vi].x;
+            v.y = positions[vi].y;
+            v.z = positions[vi].z;
+
+            if (!uvs.empty() && i < face.textureCoordIndices.size())
+            {
+                int ti = face.textureCoordIndices[i];
+                v.u = uvs[ti].u;
+                v.v = uvs[ti].v;
+            }
+
+            if (!normals.empty() && i < face.normalIndices.size())
+            {
+                int ni = face.normalIndices[i];
+                v.nx = normals[ni].x;
+                v.ny = normals[ni].y;
+                v.nz = normals[ni].z;
+            }
+
+            vertices.push_back(v);
+        }
+    }
+
+    m_vertexCount = static_cast<uint32_t>(vertices.size());
+
     glGenVertexArrays(1, &m_vao);
     glBindVertexArray(m_vao);
 
-    // Vertex buffer
-    GLuint vertexVBO;
-    glGenBuffers(1, &vertexVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexVBO);
-    glBufferData(GL_ARRAY_BUFFER, m_loader.getVertices().size() * sizeof(spear::ModelLoader::Vertex),
-                 m_loader.getVertices().data(), GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(spear::ModelLoader::Vertex), (void*)0);
+    GLuint vbo;
+    glGenBuffers(1, &vbo);
+    glBindBuffer(GL_ARRAY_BUFFER, vbo);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
+
+    constexpr GLsizei stride = sizeof(Vertex);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, (void*)offsetof(Vertex, x));
     glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, stride, (void*)offsetof(Vertex, u));
+    glEnableVertexAttribArray(1);
+    glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, stride, (void*)offsetof(Vertex, nx));
+    glEnableVertexAttribArray(2);
 
-    // Texture coordinate buffer
-    if (!m_loader.getUvs().empty())
-    {
-        GLuint uvVBO;
-        glGenBuffers(1, &uvVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, uvVBO);
-        glBufferData(GL_ARRAY_BUFFER, m_loader.getUvs().size() * sizeof(spear::ModelLoader::TextureCoord),
-                     m_loader.getUvs().data(), GL_STATIC_DRAW);
-        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(spear::ModelLoader::TextureCoord), (void*)0);
-        glEnableVertexAttribArray(1);
-    }
-
-    // Normal buffer
-    if (!m_loader.getNormals().empty())
-    {
-        GLuint normalVBO;
-        glGenBuffers(1, &normalVBO);
-        glBindBuffer(GL_ARRAY_BUFFER, normalVBO);
-        glBufferData(GL_ARRAY_BUFFER, m_loader.getNormals().size() * sizeof(spear::ModelLoader::Normal),
-                     m_loader.getNormals().data(), GL_STATIC_DRAW);
-        glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(spear::ModelLoader::Normal), (void*)0);
-        glEnableVertexAttribArray(2);
-    }
-
-    // Index buffer
-    for (const auto& face : m_loader.getFaces())
-    {
-        m_indices.insert(m_indices.end(), face.vertexIndices.begin(), face.vertexIndices.end());
-    }
-
-    uint32_t ebo;
-    glGenBuffers(1, &ebo);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(uint32_t), m_indices.data(), GL_STATIC_DRAW);
-
-    // Unbind VAO.
     glBindVertexArray(0);
 
     // Get material data.
@@ -108,7 +122,7 @@ void OBJModel::render(Camera& camera)
 
     // Draw
     glBindVertexArray(m_vao);
-    glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, nullptr);
+    glDrawArrays(GL_TRIANGLES, 0, m_vertexCount);
 
     // Unset, unbind
     glBindVertexArray(0);

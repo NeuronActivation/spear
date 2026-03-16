@@ -15,14 +15,11 @@ int main()
     spear::MovementController movement_controller(camera);
     spear::SceneManager scene_manager;
 
-    namespace bullet = spear::physics::bullet;
-    namespace vulkan = spear::rendering::vulkan;
-
-    bullet::World bullet_world;
+    spear::physics::bullet::World bullet_world;
     auto shared_bullet_world = std::make_shared<btDiscreteDynamicsWorld>(*bullet_world.getDynamicsWorld());
     auto default_size = glm::vec3(1.0f, 1.0f, 1.0f);
 
-    vulkan::Renderer renderer(window);
+    spear::rendering::vulkan::Renderer renderer(window);
     renderer.init();
     renderer.setBackgroundColor(0.1f, 0.1f, 0.15f, 1.0f);
     renderer.setCamera(&camera);
@@ -31,24 +28,28 @@ int main()
     VkPhysicalDevice physDevice = renderer.getPhysicalDevice();
 
     // --- Descriptor pool + layout (owned here, lifetime matches the app) ---
-    VkDescriptorPool descriptorPool = vulkan::Texture::createDescriptorPool(device, 8);
-    VkDescriptorSetLayout descriptorSetLayout = vulkan::Texture::createDescriptorSetLayout(device);
+    VkDescriptorPool descriptorPool = spear::rendering::vulkan::Texture::createDescriptorPool(device, 8);
+    VkDescriptorSetLayout descriptorSetLayout = spear::rendering::vulkan::Texture::createDescriptorSetLayout(device);
 
     // Initialize the textured pipeline using the sampler layout.
     renderer.initializeTexturedPipeline(descriptorSetLayout);
 
     // --- Texture ---
-    auto texture = std::make_shared<vulkan::STBTexture>(
-            device, physDevice, renderer.getCommandPool(), renderer.getGraphicsQueue());
-    texture->loadFromFile(spear::getAssetPath("wallnut.jpg"));
+    auto texture = spear::rendering::vulkan::STBTexture::create(device, physDevice, renderer.getCommandPool(), renderer.getGraphicsQueue(), spear::getAssetPath("wallnut.jpg"));
+    auto niilo = spear::rendering::vulkan::STBTexture::create(device, physDevice, renderer.getCommandPool(), renderer.getGraphicsQueue(), spear::getAssetPath("niilo.jpg"));
 
     // clang-format off
     auto scene_objects = spear::Scene::Container{
-        std::make_shared<vulkan::TexturedCube>(
+        std::make_shared<spear::rendering::vulkan::TexturedCube>(
             device, physDevice,
             texture,
             descriptorPool, descriptorSetLayout,
-            bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(1.5f, 0.0f, 0.0f), default_size)),
+            spear::physics::bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(1.5f, 0.0f, 0.0f), default_size)),
+        std::make_shared<spear::rendering::vulkan::Sprite3D>(
+            device, physDevice,
+            niilo,
+            descriptorPool, descriptorSetLayout,
+            spear::physics::bullet::ObjectData(shared_bullet_world, 0.0f, glm::vec3(-1.5f, 0.0f, 0.0f), default_size)),
     };
     // clang-format on
 

@@ -12,6 +12,8 @@ public:
     /// Constructor.
     STBTexture(VkDevice device, VkPhysicalDevice physicalDevice, VkCommandPool commandPool, VkQueue graphicsQueue);
 
+    static std::shared_ptr<STBTexture> create(VkDevice device, VkPhysicalDevice physDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::string assetPath);
+
     void loadFromFile(const std::string& filePath);
 
 private:

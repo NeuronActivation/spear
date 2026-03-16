@@ -21,6 +21,14 @@ STBTexture::STBTexture(VkDevice device,
     m_device = device;
 }
 
+std::shared_ptr<STBTexture> STBTexture::create(VkDevice device, VkPhysicalDevice physDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::string assetPath)
+{
+    auto texture = std::make_shared<vulkan::STBTexture>(
+            device, physDevice, commandPool, graphicsQueue);
+    texture->loadFromFile(assetPath);
+    return texture;
+}
+
 void STBTexture::loadFromFile(const std::string& filePath)
 {
     int texWidth, texHeight, texChannels;

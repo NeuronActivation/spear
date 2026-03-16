@@ -1,5 +1,5 @@
 #include <spear/rendering/vulkan/frame_context.hh>
-#include <spear/rendering/vulkan/sprite_3d.hh>
+#include <spear/rendering/vulkan/model/obj_model.hh>
 
 #include <glm/mat4x4.hpp>
 
@@ -24,19 +24,22 @@ static uint32_t findMemoryType(VkPhysicalDevice physDevice,
             return i;
         }
     }
-    throw std::runtime_error("Sprite3D: failed to find suitable memory type!");
+    throw std::runtime_error("OBJModel: failed to find suitable memory type!");
 }
 
-Sprite3D::Sprite3D(VkDevice device,
+OBJModel::OBJModel(VkDevice device,
                    VkPhysicalDevice physDevice,
+                   const std::string& object_file_path,
+                   const std::string& material_file_path,
                    std::shared_ptr<vulkan::Texture> texture,
                    VkDescriptorPool descriptorPool,
                    VkDescriptorSetLayout descriptorSetLayout,
                    physics::bullet::ObjectData&& object_data)
-    : BaseSprite3D(texture, nullptr, std::move(object_data)),
-      m_vkTexture(std::move(texture)),
+    : BaseModel(nullptr, std::move(object_data)),
+      m_texture(std::move(texture)),
       m_device(device)
 {
+    m_loader.load(object_file_path, material_file_path);
     createVertexBuffer(physDevice);
 
     VkDescriptorSetAllocateInfo dsAllocInfo{};
@@ -45,12 +48,12 @@ Sprite3D::Sprite3D(VkDevice device,
     dsAllocInfo.descriptorSetCount = 1;
     dsAllocInfo.pSetLayouts = &descriptorSetLayout;
     if (vkAllocateDescriptorSets(m_device, &dsAllocInfo, &m_descriptorSet) != VK_SUCCESS)
-        throw std::runtime_error("Sprite3D: failed to allocate descriptor set!");
+        throw std::runtime_error("OBJModel: failed to allocate descriptor set!");
 
     VkDescriptorImageInfo imageInfo{};
     imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-    imageInfo.imageView = m_vkTexture->getImageView();
-    imageInfo.sampler = m_vkTexture->getSampler();
+    imageInfo.imageView = m_texture->getImageView();
+    imageInfo.sampler = m_texture->getSampler();
 
     VkWriteDescriptorSet write{};
     write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -63,7 +66,7 @@ Sprite3D::Sprite3D(VkDevice device,
     vkUpdateDescriptorSets(m_device, 1, &write, 0, nullptr);
 }
 
-Sprite3D::~Sprite3D()
+OBJModel::~OBJModel()
 {
     if (m_vertexBuffer != VK_NULL_HANDLE)
         vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
@@ -72,7 +75,7 @@ Sprite3D::~Sprite3D()
     // Descriptor set freed implicitly when the pool is reset/destroyed.
 }
 
-void Sprite3D::render(Camera& camera)
+void OBJModel::render(Camera& camera)
 {
     VkCommandBuffer cmd = g_frameContext.commandBuffer;
     VkPipeline pipeline = g_frameContext.texturedPipeline;
@@ -94,9 +97,9 @@ void Sprite3D::render(Camera& camera)
     vkCmdDraw(cmd, m_vertexCount, 1, 0, 0);
 }
 
-void Sprite3D::createVertexBuffer(VkPhysicalDevice physDevice)
+void OBJModel::createVertexBuffer(VkPhysicalDevice physDevice)
 {
-    auto vertices = createVertices();
+    auto vertices = buildVertices();
     m_vertexCount = static_cast<uint32_t>(vertices.size());
     VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
 
@@ -107,7 +110,7 @@ void Sprite3D::createVertexBuffer(VkPhysicalDevice physDevice)
     bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (vkCreateBuffer(m_device, &bufferInfo, nullptr, &m_vertexBuffer) != VK_SUCCESS)
-        throw std::runtime_error("Sprite3D: failed to create vertex buffer!");
+        throw std::runtime_error("OBJModel: failed to create vertex buffer!");
 
     VkMemoryRequirements memReq;
     vkGetBufferMemoryRequirements(m_device, m_vertexBuffer, &memReq);
@@ -120,7 +123,7 @@ void Sprite3D::createVertexBuffer(VkPhysicalDevice physDevice)
                                                        VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     if (vkAllocateMemory(m_device, &allocInfo, nullptr, &m_vertexMemory) != VK_SUCCESS)
-        throw std::runtime_error("Sprite3D: failed to allocate vertex buffer memory!");
+        throw std::runtime_error("OBJModel: failed to allocate vertex buffer memory!");
 
     vkBindBufferMemory(m_device, m_vertexBuffer, m_vertexMemory, 0);
 
@@ -130,22 +133,30 @@ void Sprite3D::createVertexBuffer(VkPhysicalDevice physDevice)
     vkUnmapMemory(m_device, m_vertexMemory);
 }
 
-std::vector<Sprite3D::Vertex> Sprite3D::createVertices() const
+std::vector<OBJModel::Vertex> OBJModel::buildVertices()
 {
-    // clang-format off
-    // Winding is CW in world space so that after the shader's Y-flip it becomes
-    // CW in Vulkan framebuffer space (Y-down), matching VK_FRONT_FACE_CLOCKWISE.
-    return {
-        // Triangle 1
-        {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
-        {{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}},
-        {{ 0.5f, -0.5f, 0.0f}, {1.0f, 0.0f}},
-        // Triangle 2
-        {{ 0.5f,  0.5f, 0.0f}, {1.0f, 1.0f}},
-        {{-0.5f, -0.5f, 0.0f}, {0.0f, 0.0f}},
-        {{-0.5f,  0.5f, 0.0f}, {0.0f, 1.0f}},
-    };
-    // clang-format on
+    const auto& positions = m_loader.getVertices();
+    const auto& uvs = m_loader.getUvs();
+
+    std::vector<Vertex> vertices;
+    for (const auto& face : m_loader.getFaces())
+    {
+        for (size_t i = 0; i < face.vertexIndices.size(); ++i)
+        {
+            Vertex v{};
+            int vi = face.vertexIndices[i];
+            v.position = {positions[vi].x, positions[vi].y, positions[vi].z};
+
+            if (!uvs.empty() && i < face.textureCoordIndices.size())
+            {
+                int ti = face.textureCoordIndices[i];
+                v.uv = {uvs[ti].u, uvs[ti].v};
+            }
+
+            vertices.push_back(v);
+        }
+    }
+    return vertices;
 }
 
 } // namespace spear::rendering::vulkan

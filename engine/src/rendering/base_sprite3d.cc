@@ -1,15 +1,14 @@
-#include <spear/rendering/base_shader.hh>
 #include <spear/rendering/base_sprite_3d.hh>
-
-#include <GL/glew.h>
 
 namespace spear::rendering
 {
 
-BaseSprite3D::BaseSprite3D(glm::vec3 position, std::shared_ptr<rendering::BaseTexture> texture, std::shared_ptr<BaseShader> shader)
-    : Mesh(shader), Transform(), m_texture(texture), m_position(position)
+BaseSprite3D::BaseSprite3D(std::shared_ptr<rendering::BaseTexture> texture,
+                           std::shared_ptr<BaseShader> shader,
+                           physics::bullet::ObjectData&& object_data)
+    : Shape(shader, std::move(object_data), glm::vec4(1.0f)),
+      m_texture(texture)
 {
-    Transform::translate(m_position);
 }
 
 } // namespace spear::rendering

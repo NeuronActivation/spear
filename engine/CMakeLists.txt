@@ -21,7 +21,7 @@ add_compile_options(-Wall -Wextra -pedantic -std=c++20)
 
 set(SPEAR_ROOT "${CMAKE_CURRENT_SOURCE_DIR}")
 
-file(GLOB_RECURSE SOURCES "src/*.cc")
+file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cc")
 
 message(STATUS "Bullet include dirs: ${BULLET_INCLUDE_DIRS}")
 message(STATUS "Bullet libraries: ${BULLET_LIBRARIES}")

@@ -1,7 +1,6 @@
 #ifndef SPEAR_RENDERING_OPENGL_SPRITE_3D_HH
 #define SPEAR_RENDERING_OPENGL_SPRITE_3D_HH
 
-#include <spear/mesh.hh>
 #include <spear/rendering/base_sprite_3d.hh>
 
 namespace spear::rendering::opengl
@@ -11,7 +10,8 @@ class Sprite3D : public BaseSprite3D
 {
 public:
     /// Constructor
-    Sprite3D(glm::vec3 position, std::shared_ptr<rendering::BaseTexture> texture);
+    Sprite3D(std::shared_ptr<rendering::BaseTexture> texture,
+             physics::bullet::ObjectData&& object_data);
 
     /// Destructor
     ~Sprite3D();

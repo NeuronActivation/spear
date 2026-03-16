@@ -2,45 +2,30 @@
 #define SPEAR_SPRITE_3D_HH
 
 #include <spear/rendering/base_texture.hh>
-
-#include <spear/mesh.hh>
-#include <spear/transform.hh>
+#include <spear/rendering/shapes/shape.hh>
 
 namespace spear::rendering
 {
 
-class BaseSprite3D : public Mesh, public Transform
+class BaseSprite3D : public Shape
 {
 public:
     // Constructor with texture.
-    BaseSprite3D(glm::vec3 position, std::shared_ptr<BaseTexture> texture, std::shared_ptr<BaseShader> shader);
+    BaseSprite3D(std::shared_ptr<BaseTexture> texture,
+                 std::shared_ptr<BaseShader> shader,
+                 physics::bullet::ObjectData&& object_data);
 
     // Destructor.
     virtual ~BaseSprite3D() {};
 
-    virtual void initialize() = 0;
+    virtual void initialize() {};
 
     /// Mesh::render implementation.
     virtual void render(Camera& camera) = 0;
 
-    void setPosition(const glm::vec3& newPosition)
-    {
-        m_position = newPosition;
-    }
-
-    void setRotation(float newRotation)
-    {
-        m_rotation = newRotation;
-    }
-
 protected:
     // Texture
     std::shared_ptr<BaseTexture> m_texture;
-
-private:
-    // Input data.
-    glm::vec3 m_position;
-    float m_rotation; // degrees
 };
 
 } // namespace spear::rendering

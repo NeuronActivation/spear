@@ -41,6 +41,16 @@ public:
         return m_sampler;
     }
 
+    void setDevice(VkDevice device)
+    {
+        m_device = device;
+    }
+
+    VkDevice getDevice()
+    {
+        return m_device;
+    }
+
     /// Create a descriptor pool that holds \p maxSets combined-image-sampler descriptors.
     static VkDescriptorPool createDescriptorPool(VkDevice device, uint32_t maxSets);
 

@@ -1,6 +1,5 @@
 #include <spear/rendering/opengl/sprite_3d.hh>
 
-#include <spear/mesh.hh>
 #include <spear/rendering/opengl/shader.hh>
 
 #include <GL/glew.h>
@@ -8,10 +7,14 @@
 namespace spear::rendering::opengl
 {
 
-Sprite3D::Sprite3D(glm::vec3 position, std::shared_ptr<rendering::BaseTexture> texture)
-    : BaseSprite3D(position, texture, std::shared_ptr<BaseShader>(Shader::create(ShaderType::sprite3D))),
+Sprite3D::Sprite3D(std::shared_ptr<rendering::BaseTexture> texture,
+                   physics::bullet::ObjectData&& object_data)
+    : BaseSprite3D(texture,
+                   std::shared_ptr<BaseShader>(Shader::create(ShaderType::sprite3D)),
+                   std::move(object_data)),
       m_sampler(GL_TEXTURE_2D)
 {
+    initialize();
 }
 
 Sprite3D::~Sprite3D()
@@ -63,4 +66,5 @@ void Sprite3D::initialize()
 
     glBindVertexArray(0);
 }
+
 } // namespace spear::rendering::opengl

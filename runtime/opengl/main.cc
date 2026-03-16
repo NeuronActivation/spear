@@ -1,27 +1,6 @@
-#include <spear/camera.hh>
-#include <spear/create_scene.hh>
-#include <spear/event_handler.hh>
-#include <spear/model/obj_loader.hh>
-#include <spear/movement_controller.hh>
-#include <spear/scene_manager.hh>
-#include <spear/time.hh>
-
-#include <spear/window/opengl_window.hh>
-
-#include <spear/rendering/opengl/model/obj_model.hh>
-#include <spear/rendering/opengl/renderer.hh>
-#include <spear/rendering/opengl/shader.hh>
-#include <spear/rendering/opengl/shapes/cube.hh>
-#include <spear/rendering/opengl/shapes/quad.hh>
-#include <spear/rendering/opengl/shapes/sphere.hh>
-#include <spear/rendering/opengl/texture/sdl_texture.hh>
-
-#include <spear/physics/bullet/world.hh>
+#include <spear/spear.hh>
 
 #include <iostream>
-
-// TODO
-// #include <spear/sprite_3d.hh>
 
 int main()
 {
@@ -41,33 +20,34 @@ int main()
     spear::MovementController movement_controller(camera);
     spear::SceneManager scene_manager;
 
-    namespace bullet = spear::physics::bullet;
-    namespace opengl = spear::rendering::opengl;
-
-    opengl::Renderer renderer(window);
+    spear::rendering::opengl::Renderer renderer(window);
     renderer.init();
     renderer.setViewPort(w_size.x, w_size.y);
     renderer.setBackgroundColor(0.2f, 0.3f, 0.4f, 1.0f);
 
     // Bullet world.
-    bullet::World bullet_world;
+    spear::physics::bullet::World bullet_world;
     auto shared_bullet_world = std::make_shared<btDiscreteDynamicsWorld>(*bullet_world.getDynamicsWorld());
 
     // Texture creation.
-    auto niilo_texture = std::make_shared<opengl::SDLTexture>("niilo.jpg");
-    auto wallnut_texture = std::make_shared<opengl::SDLTexture>("wallnut.jpg");
+    auto niilo_texture = std::make_shared<spear::rendering::opengl::SDLTexture>("niilo.jpg");
+    auto wallnut_texture = std::make_shared<spear::rendering::opengl::SDLTexture>("wallnut.jpg");
 
     auto default_size = glm::vec3(1.0f, 1.0f, 1.0f);
 
     // clang-format off
     auto scene1_objects = spear::Scene::Container {
-        std::make_shared<opengl::Cube>(wallnut_texture, bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f), default_size)),
-        std::make_shared<opengl::OBJModel>("test.obj", "test.mtl", wallnut_texture,
-                                   bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(1.0f, 5.0f, -15.0f), default_size)),
-        opengl::Cube::create(niilo_texture, bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(1.0f, 5.0f, 13.0f), default_size)),
-        std::make_shared<opengl::Quad>(bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(2.0f, 8.0f, 1.0f), default_size), glm::vec4(1.0f, 0.5f, 0.5f, 1.0f)),
-        std::make_shared<opengl::Sphere>(niilo_texture, bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(4.0f, 3.f, -4.f), default_size))
+        std::make_shared<spear::rendering::opengl::Cube>(wallnut_texture, spear::physics::bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f), default_size)),
+        std::make_shared<spear::rendering::opengl::OBJModel>("test.obj", "test.mtl", wallnut_texture,
+                                   spear::physics::bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(1.0f, 5.0f, -15.0f), default_size)),
+        spear::rendering::opengl::Cube::create(niilo_texture, spear::physics::bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(1.0f, 5.0f, 13.0f), default_size)),
+        std::make_shared<spear::rendering::opengl::Quad>(spear::physics::bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(2.0f, 8.0f, 1.0f), default_size), glm::vec4(1.0f, 0.5f, 0.5f, 1.0f)),
+        std::make_shared<spear::rendering::opengl::Sphere>(niilo_texture, spear::physics::bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(4.0f, 3.f, -4.f), default_size)),
+
+        std::make_shared<spear::rendering::opengl::Sprite3D>(
+            wallnut_texture, spear::physics::bullet::ObjectData(shared_bullet_world, 0.0f, glm::vec3(-1.5f, 0.0f, 0.0f), default_size)),
     };
+
     auto scene1_function = [](spear::Scene::Container& objects)
     {
         objects[0]->translate(glm::vec3(0.0f, -4.0f, 0.0f));
@@ -75,9 +55,9 @@ int main()
     };
 
     auto scene2_objects = spear::Scene::Container {
-        std::make_shared<opengl::Cube>(wallnut_texture, bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(10.0f, 2.0f, 101.0f), default_size)),
-        std::make_shared<opengl::Quad>(bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(122.0f, -228.0f, -231.0f), default_size), glm::vec4(1.0f, 0.5f, 0.5f, 1.0f)),
-        std::make_shared<opengl::Sphere>(niilo_texture, bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(204.0f, 343.f, -4324.4f), default_size))
+        std::make_shared<spear::rendering::opengl::Cube>(wallnut_texture, spear::physics::bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(10.0f, 2.0f, 101.0f), default_size)),
+        std::make_shared<spear::rendering::opengl::Quad>(spear::physics::bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(122.0f, -228.0f, -231.0f), default_size), glm::vec4(1.0f, 0.5f, 0.5f, 1.0f)),
+        std::make_shared<spear::rendering::opengl::Sphere>(niilo_texture, spear::physics::bullet::ObjectData(shared_bullet_world, 1.0f, glm::vec3(204.0f, 343.f, -4324.4f), default_size))
     };
     auto scene2_function = [](spear::Scene::Container& objects)
     {
