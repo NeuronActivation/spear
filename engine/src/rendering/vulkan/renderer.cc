@@ -52,7 +52,6 @@ void Renderer::render()
 
 void Renderer::drawFrame()
 {
-    std::cout << "CurrentFrame: " << m_currentFrame << std::endl;
     auto* device = m_deviceManager.getDevice();
     if (device == VK_NULL_HANDLE)
     {
@@ -69,7 +68,6 @@ void Renderer::drawFrame()
         return;
     }
 
-    std::cout << "Before drawFrame vkWaitForFences" << std::endl;
     VkResult waitResult = vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
     if (waitResult != VK_SUCCESS)
     {
@@ -77,7 +75,6 @@ void Renderer::drawFrame()
         return;
     }
 
-    std::cout << "Before drawFrame vkResetFences" << std::endl;
     VkResult resetResult = vkResetFences(device, 1, &fence);
     if (resetResult != VK_SUCCESS)
     {
