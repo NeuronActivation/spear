@@ -24,7 +24,7 @@ Renderer::Renderer(VulkanWindow& vulkan_window)
     m_frameBufferManager.initialize(m_deviceManager.getDevice(), m_renderPassManager.getRenderPass(), m_swapchain.getImageViews(), m_swapchain.getExtent());
     m_pipelineManager.initialize(m_deviceManager.getDevice(), m_renderPassManager.getRenderPass(), m_swapchain.getExtent());
     m_commandBufferManager.initialize(m_deviceManager.getDevice(), m_deviceManager.getCommandPool(), m_swapchain.getImageCount());
-    m_synchronization.initialize(m_deviceManager.getDevice(), m_framesInFlight);
+    m_synchronization.initialize(m_deviceManager.getDevice(), m_framesInFlight, m_swapchain.getImageCount());
 }
 
 Renderer::~Renderer()
@@ -194,7 +194,7 @@ void Renderer::drawFrame()
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &commandBuffer;
 
-    VkSemaphore signalSemaphores[] = {m_synchronization.getRenderFinishedSemaphore(m_currentFrame)};
+    VkSemaphore signalSemaphores[] = {m_synchronization.getRenderFinishedSemaphore(m_currentFrame, imageIndex)};
     submitInfo.signalSemaphoreCount = 1;
     submitInfo.pSignalSemaphores = signalSemaphores;
 
@@ -263,6 +263,7 @@ void Renderer::recreateSwapchain()
     auto* device = m_deviceManager.getDevice();
     vkDeviceWaitIdle(device);
     cleanSwapchain();
+
     const auto& vulkan_window = *dynamic_cast<const VulkanWindow*>(&BaseRenderer::getWindow());
     auto window_size = vulkan_window.getSize();
     std::cout << "New size x: " << window_size.x << " y: " << window_size.y << std::endl;
@@ -273,11 +274,11 @@ void Renderer::recreateSwapchain()
     if (m_texturedDescriptorSetLayout != VK_NULL_HANDLE)
         m_pipelineManager.initializeTextured(device, m_renderPassManager.getRenderPass(), m_swapchain.getExtent(), m_texturedDescriptorSetLayout);
     m_frameBufferManager.initialize(device, m_renderPassManager.getRenderPass(), m_swapchain.getImageViews(), m_swapchain.getExtent());
-    vkDeviceWaitIdle(device);
     m_commandBufferManager.initialize(device, m_deviceManager.getCommandPool(), m_swapchain.getImageCount());
 
     m_synchronization.cleanup(device);
-    m_synchronization.initialize(device, m_framesInFlight);
+    m_synchronization.initialize(device, m_framesInFlight, m_swapchain.getImageCount());
+    vkDeviceWaitIdle(device);
 }
 
 } // namespace spear::rendering::vulkan

@@ -11,26 +11,30 @@ namespace spear::rendering::vulkan
 class Synchronization
 {
 public:
-    void initialize(VkDevice device, size_t maxFramesInFlight);
+    void initialize(VkDevice device, uint32_t framesInFlight, uint32_t swapchainImageCount);
     void cleanup(VkDevice device);
 
-    VkSemaphore getImageAvailableSemaphore(size_t index) const
+    VkSemaphore getImageAvailableSemaphore(uint32_t index) const
     {
         return m_imageAvailableSemaphores[index];
     }
-    VkSemaphore getRenderFinishedSemaphore(size_t index) const
+    VkSemaphore getRenderFinishedSemaphore(uint32_t frameIndex, uint32_t imageIndex) const
     {
-        return m_renderFinishedSemaphores[index];
+        return m_renderFinishedSemaphores[frameIndex][imageIndex];
     }
-    VkFence& getInFlightFence(size_t index)
+    VkFence getInFlightFence(uint32_t index) const
     {
         return m_inFlightFences[index];
     }
 
 private:
+    VkDevice m_device;
+    uint32_t m_framesInFlight;
+    uint32_t m_swapchainImageCount;
+
     std::vector<VkSemaphore> m_imageAvailableSemaphores;
-    std::vector<VkSemaphore> m_renderFinishedSemaphores;
     std::vector<VkFence> m_inFlightFences;
+    std::vector<std::vector<VkSemaphore>> m_renderFinishedSemaphores;
 };
 
 } // namespace spear::rendering::vulkan

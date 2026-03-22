@@ -85,8 +85,8 @@ private:
 
     VkDescriptorSetLayout m_texturedDescriptorSetLayout = VK_NULL_HANDLE;
 
-    uint64_t m_currentFrame = 0;
-    uint64_t m_framesInFlight = 2;
+    uint32_t m_currentFrame = 0;
+    uint32_t m_framesInFlight = 2;
     bool m_framebufferResized = false;
 
     Camera* m_camera = nullptr;
