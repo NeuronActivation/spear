@@ -5,7 +5,7 @@
 #include <glm/vec3.hpp>
 
 #include <SDL3/SDL_keycode.h>
-#include <unordered_map>
+#include <shared_mutex>
 
 namespace spear
 {
@@ -33,80 +33,48 @@ public:
     glm::mat4 getProjectionMatrix() const;
 
     /// \ingroup CameraGetters
-    glm::vec3 getPosition() const
-    {
-        return m_position;
-    }
+    glm::vec3 getPosition() const;
 
     /// \ingroup CameraGetters
-    float getSpeed() const
-    {
-        return m_movementSpeed;
-    }
+    float getSpeed() const;
 
     /// \ingroup CameraGetters
-    glm::vec3 getWorldUp() const
-    {
-        return m_worldUp;
-    }
+    glm::vec3 getWorldUp() const;
 
     /// \ingroup CameraGetters
-    glm::vec3 getUp() const
-    {
-        return m_up;
-    }
+    glm::vec3 getUp() const;
 
     /// \ingroup CameraGetters
-    glm::vec3 getFront() const
-    {
-        return m_front;
-    }
+    glm::vec3 getFront() const;
 
     /// \ingroup CameraGetters
-    glm::vec3 getRight() const
-    {
-        return m_right;
-    }
+    glm::vec3 getRight() const;
 
-    void moveForward(float delta_time)
-    {
-        m_position += m_front * m_movementSpeed * delta_time;
-    }
+    /// \ingroup CameraMove
+    void moveForward(float delta_time);
 
-    void moveBackward(float delta_time)
-    {
-        m_position -= m_front * m_movementSpeed * delta_time;
-    }
+    /// \ingroup CameraMove
+    void moveBackward(float delta_time);
 
-    void moveRight(float delta_time)
-    {
-        m_position += m_right * m_movementSpeed * delta_time;
-    }
+    /// \ingroup CameraMove
+    void moveRight(float delta_time);
 
-    void moveLeft(float delta_time)
-    {
-        m_position -= m_right * m_movementSpeed * delta_time;
-    }
+    /// \ingroup CameraMove
+    void moveLeft(float delta_time);
 
-    void moveUp(float delta_time)
-    {
-        m_position += m_up * m_movementSpeed * delta_time;
-    }
+    /// \ingroup CameraMove
+    void moveUp(float delta_time);
 
-    void moveDown(float delta_time)
-    {
-        m_position -= m_up * m_movementSpeed * delta_time;
-    }
+    /// \ingroup CameraMove
+    void moveDown(float delta_time);
 
+    /// \ingroup CameraMove
     void rotate(float x_offset, float y_offset, bool constrain_pitch = true);
 
     // Zoom fov.
     void zoom(float y_offset);
 
-    void setPosition(const glm::vec3& newPosition)
-    {
-        m_position = newPosition;
-    }
+    void setPosition(const glm::vec3& newPosition);
 
 private:
     // Updates front, right, and up vectors based on updated Euler angles
@@ -128,6 +96,8 @@ private:
     float m_movementSpeed;
     float m_mouseSensitivity;
     float m_fov;
+
+    mutable std::shared_mutex m_mutex;
 };
 
 } // namespace spear

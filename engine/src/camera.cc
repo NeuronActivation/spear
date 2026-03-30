@@ -18,16 +18,100 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch, float m
 
 glm::mat4 Camera::getViewMatrix() const
 {
+    std::shared_lock lock(m_mutex);
     return glm::lookAt(m_position, m_position + m_front, m_up);
 }
 
 glm::mat4 Camera::getProjectionMatrix() const
 {
+    std::shared_lock lock(m_mutex);
     return glm::perspective(glm::radians(m_fov), ASPECT_RATIO, 0.1f, 100.0f);
+}
+
+glm::vec3 Camera::getPosition() const
+{
+    std::shared_lock lock(m_mutex);
+    return m_position;
+}
+
+float Camera::getSpeed() const
+{
+    std::shared_lock lock(m_mutex);
+    return m_movementSpeed;
+}
+
+glm::vec3 Camera::getWorldUp() const
+{
+    std::shared_lock lock(m_mutex);
+    return m_worldUp;
+}
+
+/// \ingroup CameraGetters
+glm::vec3 Camera::getUp() const
+{
+    std::shared_lock lock(m_mutex);
+    return m_up;
+}
+
+/// \ingroup CameraGetters
+glm::vec3 Camera::getFront() const
+{
+    std::shared_lock lock(m_mutex);
+    return m_front;
+}
+
+/// \ingroup CameraGetters
+glm::vec3 Camera::getRight() const
+{
+    std::shared_lock lock(m_mutex);
+    return m_right;
+}
+
+void Camera::moveForward(float delta_time)
+{
+    std::shared_lock lock(m_mutex);
+    m_position += m_front * m_movementSpeed * delta_time;
+}
+
+void Camera::moveBackward(float delta_time)
+{
+    std::shared_lock lock(m_mutex);
+    m_position -= m_front * m_movementSpeed * delta_time;
+}
+
+void Camera::moveRight(float delta_time)
+{
+    std::shared_lock lock(m_mutex);
+    m_position += m_right * m_movementSpeed * delta_time;
+}
+
+void Camera::moveLeft(float delta_time)
+{
+    std::shared_lock lock(m_mutex);
+    m_position -= m_right * m_movementSpeed * delta_time;
+}
+
+void Camera::moveUp(float delta_time)
+{
+    std::shared_lock lock(m_mutex);
+    m_position += m_up * m_movementSpeed * delta_time;
+}
+
+void Camera::moveDown(float delta_time)
+{
+    std::shared_lock lock(m_mutex);
+    m_position -= m_up * m_movementSpeed * delta_time;
+}
+
+void Camera::setPosition(const glm::vec3& newPosition)
+{
+    std::shared_lock lock(m_mutex);
+    m_position = newPosition;
 }
 
 void Camera::rotate(float xoffset, float yoffset, bool constrain_pitch)
 {
+    std::shared_lock lock(m_mutex);
     m_yaw += xoffset * m_mouseSensitivity;
     m_pitch -= yoffset * m_mouseSensitivity;
 
