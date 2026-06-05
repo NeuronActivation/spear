@@ -23,6 +23,7 @@ public:
     /// Move assignment operator.
     Transform& operator=(Transform&& other);
 
+    virtual void setPosition(const glm::vec3& position);
     virtual void translate(const glm::vec3& position);
     virtual void rotate(float speed, const glm::vec3& direction);
     virtual void scale(const glm::vec3& scale);
