@@ -98,7 +98,7 @@ void MenuList::rebuildItems()
             text->setColor(SDL_Color{255, 255, 255, 255});
 
         text->setString("> " + m_items[i]);
-        text->setPosition(glm::vec2(m_position.x, m_position.y + static_cast<float>(i) * m_spacing));
+        text->setPosition(glm::vec2(m_position.x, m_position.y + static_cast<float>(i) * m_spacing * 0.002f));
 
         m_texts.push_back(std::move(text));
     }
