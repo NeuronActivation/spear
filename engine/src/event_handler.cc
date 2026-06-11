@@ -32,6 +32,18 @@ void EventHandler::handleEvents(MovementController& movement_controller, float d
                     key.second();
                 }
             }
+
+            if (event.type == SDL_EVENT_KEY_DOWN)
+            {
+                for (auto& key : m_keyPressedCallbacks)
+                {
+                    if (event.key.key == key.first)
+                    {
+                        key.second();
+                    }
+                }
+            }
+
             bool isPressed = (event.type == SDL_EVENT_KEY_DOWN);
             if (keyStates.find(event.key.key) != keyStates.end())
             {
@@ -46,6 +58,11 @@ void EventHandler::handleEvents(MovementController& movement_controller, float d
 void EventHandler::handleInput(SDL_Keycode key, const std::function<void()>& callback)
 {
     m_inputKeys.emplace_back(key, callback);
+}
+
+void EventHandler::handleKeyPressed(SDL_Keycode key, const std::function<void()>& callback)
+{
+    m_keyPressedCallbacks.emplace_back(key, callback);
 }
 
 } // namespace spear

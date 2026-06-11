@@ -36,6 +36,16 @@ public:
         return m_currentScene;
     }
 
+    Scene* getSceneById(uint64_t id)
+    {
+        for (auto& scene : m_scenes)
+        {
+            if (scene.getId() == id)
+                return &scene;
+        }
+        return nullptr;
+    }
+
 private:
     Scene* m_currentScene = nullptr;
     std::vector<Scene> m_scenes;

@@ -64,4 +64,10 @@
 #include <spear/rendering/vulkan/texture/stb_texture.hh>
 #include <spear/rendering/vulkan/texture/texture.hh>
 
+// UI
+#include <spear/ui/menu_list.hh>
+#include <spear/ui/quad_2d.hh>
+#include <spear/ui/text.hh>
+#include <spear/ui/ui_renderer.hh>
+
 #endif

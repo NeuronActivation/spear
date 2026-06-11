@@ -19,6 +19,10 @@ struct FrameContext
     // Textured pipeline — used by TexturedCube.
     VkPipeline texturedPipeline = VK_NULL_HANDLE;
     VkPipelineLayout texturedPipelineLayout = VK_NULL_HANDLE;
+
+    // UI pipeline — used by UI elements.
+    VkPipeline uiPipeline = VK_NULL_HANDLE;
+    VkPipelineLayout uiPipelineLayout = VK_NULL_HANDLE;
 };
 
 extern FrameContext g_frameContext;

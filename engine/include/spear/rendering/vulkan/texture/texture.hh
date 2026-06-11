@@ -51,6 +51,27 @@ public:
         return m_device;
     }
 
+    void setImage(VkImage image)
+    {
+        m_image = image;
+    }
+    void setImageMemory(VkDeviceMemory memory)
+    {
+        m_imageMemory = memory;
+    }
+    void setImageView(VkImageView imageView)
+    {
+        m_imageView = imageView;
+    }
+    void setSampler(VkSampler sampler)
+    {
+        m_sampler = sampler;
+    }
+    void setDescriptorSet(VkDescriptorSet descSet)
+    {
+        m_descriptorSet = descSet;
+    }
+
     /// Create a descriptor pool that holds \p maxSets combined-image-sampler descriptors.
     static VkDescriptorPool createDescriptorPool(VkDevice device, uint32_t maxSets);
 

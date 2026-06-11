@@ -45,6 +45,20 @@ void Renderer::initializeTexturedPipeline(VkDescriptorSetLayout descriptorSetLay
                                          descriptorSetLayout);
 }
 
+void Renderer::initializeUIPipeline(VkDescriptorSetLayout descriptorSetLayout)
+{
+    m_uiDescriptorSetLayout = descriptorSetLayout;
+    m_pipelineManager.initializeUI(m_deviceManager.getDevice(),
+                                   m_renderPassManager.getRenderPass(),
+                                   m_swapchain.getExtent(),
+                                   descriptorSetLayout);
+}
+
+void Renderer::setUIRenderer(ui::UIRenderer* uiRenderer)
+{
+    m_uiRenderer = uiRenderer;
+}
+
 void Renderer::render()
 {
     drawFrame();
@@ -173,7 +187,19 @@ void Renderer::drawFrame()
         g_frameContext.colorPipelineLayout = m_pipelineManager.getPipelineLayout();
         g_frameContext.texturedPipeline = m_pipelineManager.getTexturedPipeline();
         g_frameContext.texturedPipelineLayout = m_pipelineManager.getTexturedPipelineLayout();
+        g_frameContext.uiPipeline = m_pipelineManager.getUIPipeline();
+        g_frameContext.uiPipelineLayout = m_pipelineManager.getUIPipelineLayout();
         m_scene->update(*m_camera);
+        g_frameContext = {};
+    }
+
+    // Render UI overlay after the 3D scene
+    if (m_uiRenderer)
+    {
+        g_frameContext.commandBuffer = commandBuffer;
+        g_frameContext.uiPipeline = m_pipelineManager.getUIPipeline();
+        g_frameContext.uiPipelineLayout = m_pipelineManager.getUIPipelineLayout();
+        m_uiRenderer->render(commandBuffer);
         g_frameContext = {};
     }
 
@@ -273,6 +299,8 @@ void Renderer::recreateSwapchain()
     m_pipelineManager.initialize(device, m_renderPassManager.getRenderPass(), m_swapchain.getExtent());
     if (m_texturedDescriptorSetLayout != VK_NULL_HANDLE)
         m_pipelineManager.initializeTextured(device, m_renderPassManager.getRenderPass(), m_swapchain.getExtent(), m_texturedDescriptorSetLayout);
+    if (m_uiDescriptorSetLayout != VK_NULL_HANDLE)
+        m_pipelineManager.initializeUI(device, m_renderPassManager.getRenderPass(), m_swapchain.getExtent(), m_uiDescriptorSetLayout);
     m_frameBufferManager.initialize(device, m_renderPassManager.getRenderPass(), m_swapchain.getImageViews(), m_swapchain.getExtent());
     m_commandBufferManager.initialize(device, m_deviceManager.getCommandPool(), m_swapchain.getImageCount());
 

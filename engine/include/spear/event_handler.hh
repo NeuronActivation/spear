@@ -6,6 +6,8 @@
 #include <SDL3/SDL_events.h>
 
 #include <functional>
+#include <unordered_map>
+#include <vector>
 
 namespace spear
 {
@@ -24,8 +26,11 @@ public:
     /// Process SDL events and call registered callbacks
     void handleEvents(MovementController& movement_controller, float delta_time);
 
-    /// Handle custom events from key input
+    /// Handle custom events from key input (fires on both press and release)
     void handleInput(SDL_Keycode key, const std::function<void()>& callback);
+
+    /// Handle key press events (fires only on key down)
+    void handleKeyPressed(SDL_Keycode key, const std::function<void()>& callback);
 
     /// Check if the application is still running
     bool isRunning() const
@@ -45,6 +50,7 @@ private:
             {SDLK_W, false}, {SDLK_S, false}, {SDLK_A, false}, {SDLK_D, false}, {SDLK_SPACE, false}, {SDLK_LSHIFT, false}};
     bool running = true;
     std::vector<std::pair<SDL_Keycode, std::function<void()>>> m_inputKeys;
+    std::vector<std::pair<SDL_Keycode, std::function<void()>>> m_keyPressedCallbacks;
 };
 
 } // namespace spear

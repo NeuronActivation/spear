@@ -20,6 +20,10 @@ public:
                             VkRenderPass renderPass,
                             VkExtent2D extent,
                             VkDescriptorSetLayout descriptorSetLayout);
+    void initializeUI(VkDevice device,
+                      VkRenderPass renderPass,
+                      VkExtent2D extent,
+                      VkDescriptorSetLayout descriptorSetLayout);
     void cleanup(VkDevice device);
 
     VkPipeline getPipeline() const
@@ -40,6 +44,15 @@ public:
         return m_texturedPipelineLayout;
     }
 
+    VkPipeline getUIPipeline() const
+    {
+        return m_uiPipeline;
+    }
+    VkPipelineLayout getUIPipelineLayout() const
+    {
+        return m_uiPipelineLayout;
+    }
+
 private:
     std::string readGLSLFile(const std::string& filepath);
     std::vector<uint32_t> compileGLSLToSPIRV(const std::string& source, shaderc_shader_kind kind);
@@ -51,6 +64,9 @@ private:
 
     VkPipeline m_texturedPipeline = VK_NULL_HANDLE;
     VkPipelineLayout m_texturedPipelineLayout = VK_NULL_HANDLE;
+
+    VkPipeline m_uiPipeline = VK_NULL_HANDLE;
+    VkPipelineLayout m_uiPipelineLayout = VK_NULL_HANDLE;
 };
 
 } // namespace spear::rendering::vulkan

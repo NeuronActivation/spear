@@ -3,6 +3,7 @@
 
 #include <spear/camera.hh>
 #include <spear/rendering/base_renderer.hh>
+#include <spear/ui/ui_renderer.hh>
 #include <spear/window/vulkan_window.hh>
 
 #include <spear/rendering/vulkan/core/command_buffer_manager.hh>
@@ -38,6 +39,11 @@ public:
     /// Initialize the textured rendering pipeline. Call once after construction,
     /// passing the descriptor set layout created via Texture::createDescriptorSetLayout().
     void initializeTexturedPipeline(VkDescriptorSetLayout descriptorSetLayout);
+
+    /// Initialize the UI overlay pipeline. Call once after construction.
+    void initializeUIPipeline(VkDescriptorSetLayout descriptorSetLayout);
+
+    void setUIRenderer(ui::UIRenderer* uiRenderer);
 
     void drawFrame();
 
@@ -84,6 +90,7 @@ private:
     Synchronization m_synchronization;
 
     VkDescriptorSetLayout m_texturedDescriptorSetLayout = VK_NULL_HANDLE;
+    VkDescriptorSetLayout m_uiDescriptorSetLayout = VK_NULL_HANDLE;
 
     uint32_t m_currentFrame = 0;
     uint32_t m_framesInFlight = 2;
@@ -91,6 +98,7 @@ private:
 
     Camera* m_camera = nullptr;
     Scene* m_scene = nullptr;
+    ui::UIRenderer* m_uiRenderer = nullptr;
 
     VkInstance m_instance;
     VkSurfaceKHR m_surface;

@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(SDL3 REQUIRED)
 find_package(SDL3_image REQUIRED)
+find_package(SDL3_ttf REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(Vulkan REQUIRED)
@@ -26,7 +27,7 @@ file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS "src/*.cc")
 message(STATUS "Bullet include dirs: ${BULLET_INCLUDE_DIRS}")
 message(STATUS "Bullet libraries: ${BULLET_LIBRARIES}")
 
-include_directories(${SDL_INCLUDE_DIRS} ${SDL3_IMAGE_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS}
+include_directories(${SDL_INCLUDE_DIRS} ${SDL3_IMAGE_INCLUDE_DIRS} ${SDL3_TTF_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS}
     ${BULLET_INCLUDE_DIRS} ${SHADERC_INCLUDE_DIRS})
 
 add_library(spear ${SOURCES})
@@ -34,7 +35,7 @@ target_include_directories(spear PUBLIC include PUBLIC ${BULLET_INCLUDE_DIRS} PR
 target_compile_definitions(spear PUBLIC SPEAR_ROOT="${SPEAR_ROOT}")
 
 target_link_libraries(spear
-    PRIVATE SDL3::SDL3 SDL3_image::SDL3_image
+    PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_ttf::SDL3_ttf
     PRIVATE OpenGL::GL GLEW::GLEW
     PRIVATE Vulkan::Vulkan
     PRIVATE ${BULLET_LIBRARIES}
