@@ -52,13 +52,19 @@ void MenuList::setSpacing(float spacing)
 void MenuList::selectNext()
 {
     if (!m_items.empty())
+    {
         m_selectedIndex = (m_selectedIndex + 1) % m_items.size();
+        rebuildItems();
+    }
 }
 
 void MenuList::selectPrevious()
 {
     if (!m_items.empty())
+    {
         m_selectedIndex = (m_selectedIndex - 1 + m_items.size()) % m_items.size();
+        rebuildItems();
+    }
 }
 
 const std::string& MenuList::getSelectedItem() const
