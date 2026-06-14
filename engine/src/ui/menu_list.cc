@@ -32,6 +32,7 @@ void MenuList::addItem(const std::string& item)
 
 void MenuList::clearItems()
 {
+    vkDeviceWaitIdle(m_device);
     m_items.clear();
     m_texts.clear();
     m_selectedIndex = 0;
@@ -82,6 +83,8 @@ void MenuList::render(VkCommandBuffer cmd)
 
 void MenuList::rebuildItems()
 {
+    // Wait for GPU to finish before destroying resources that may still be in use.
+    vkDeviceWaitIdle(m_device);
     m_texts.clear();
 
     for (size_t i = 0; i < m_items.size(); i++)

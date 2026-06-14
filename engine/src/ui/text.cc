@@ -71,6 +71,8 @@ Text::Text(VkDevice device,
 
 Text::~Text()
 {
+    if (m_vertexBuffer != VK_NULL_HANDLE || m_vertexMemory != VK_NULL_HANDLE)
+        vkDeviceWaitIdle(m_device);
     if (m_vertexBuffer != VK_NULL_HANDLE)
         vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
     if (m_vertexMemory != VK_NULL_HANDLE)
@@ -108,6 +110,8 @@ Text& Text::operator=(Text&& other) noexcept
 {
     if (this != &other)
     {
+        if (m_vertexBuffer != VK_NULL_HANDLE || m_vertexMemory != VK_NULL_HANDLE)
+            vkDeviceWaitIdle(m_device);
         if (m_vertexBuffer != VK_NULL_HANDLE)
             vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
         if (m_vertexMemory != VK_NULL_HANDLE)
@@ -201,6 +205,9 @@ void Text::render(VkCommandBuffer cmd)
 
 void Text::rebuildTexture()
 {
+    // Wait for GPU to finish before destroying resources that may still be in use.
+    vkDeviceWaitIdle(m_device);
+
     // Clean up old vertex buffer if it exists
     if (m_vertexBuffer != VK_NULL_HANDLE)
     {
@@ -451,6 +458,9 @@ void Text::rebuildQuad()
 {
     if (!m_texture || m_string.empty())
         return;
+
+    // Wait for GPU to finish before destroying resources that may still be in use.
+    vkDeviceWaitIdle(m_device);
 
     // Clean up old vertex buffer
     if (m_vertexBuffer != VK_NULL_HANDLE)
