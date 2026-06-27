@@ -33,6 +33,11 @@ public:
     {
     }
 
+    const OBJLoader& getLoader() const
+    {
+        return m_loader;
+    }
+
     void render(Camera& camera) override;
 
 private:

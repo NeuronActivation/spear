@@ -49,6 +49,11 @@ public:
     /// Model::initialize implementation.
     void initialize() override;
 
+    const OBJLoader& getLoader() const
+    {
+        return m_loader;
+    }
+
     /// Mesh::render implementation.
     void render(Camera& camera) override;
 

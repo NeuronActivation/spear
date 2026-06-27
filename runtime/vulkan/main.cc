@@ -11,13 +11,23 @@ int main()
     auto w_size = window.getSize();
     std::cout << "Window size x: " << w_size.x << " y: " << w_size.y << std::endl;
 
-    spear::Camera camera(glm::vec3(0.0f, 0.0f, 4.0f));
-    spear::MovementController movement_controller(camera);
-    spear::SceneManager scene_manager;
-
     spear::physics::bullet::World bullet_world;
     auto shared_bullet_world = std::make_shared<btDiscreteDynamicsWorld>(*bullet_world.getDynamicsWorld());
     auto default_size = glm::vec3(1.0f, 1.0f, 1.0f);
+
+    // Static floor for ground collision.
+    btTransform floor_transform;
+    floor_transform.setIdentity();
+    floor_transform.setOrigin(btVector3(0.0f, -3.0f, 0.0f));
+    auto floor_shape = std::make_unique<btBoxShape>(btVector3(1000.0f, 1.0f, 1000.0f));
+    auto floor_motion_state = std::make_unique<btDefaultMotionState>(floor_transform);
+    btRigidBody::btRigidBodyConstructionInfo floor_rb_info(0.0f, floor_motion_state.get(), floor_shape.get(), btVector3(0, 0, 0));
+    auto floor_rigid_body = std::make_unique<btRigidBody>(floor_rb_info);
+    shared_bullet_world->addRigidBody(floor_rigid_body.get());
+
+    spear::Camera camera(glm::vec3(0.0f, 1.0f, 8.0f));
+    spear::MovementController movement_controller(camera, shared_bullet_world.get());
+    spear::SceneManager scene_manager;
 
     spear::rendering::vulkan::Renderer renderer(window);
     renderer.init();
@@ -102,7 +112,7 @@ int main()
         renderer.setScene(scene_manager.getCurrentScene());
         renderer.render();
 
-        bullet_world.stepSimulation(1.0f / 60.f);
+        shared_bullet_world->stepSimulation(1.0f / 60.f);
 
         window.update();
 
