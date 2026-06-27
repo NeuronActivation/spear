@@ -89,8 +89,11 @@ void OBJModel::initialize()
 
     glBindVertexArray(0);
 
-    // Get material data.
-    m_material = m_loader.getMaterial();
+    // Get material data from first material entry.
+    if (!m_loader.getMaterials().empty())
+    {
+        m_material = m_loader.getMaterials()[0];
+    }
     rendering::opengl::openglError("OBJModel: initialize");
 }
 

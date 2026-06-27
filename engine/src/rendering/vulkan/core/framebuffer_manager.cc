@@ -1,21 +1,24 @@
 #include <spear/rendering/vulkan/core/framebuffer_manager.hh>
 
+#include <array>
 #include <iostream>
 
 namespace spear::rendering::vulkan
 {
 
-void FramebufferManager::initialize(VkDevice device, VkRenderPass render_pass, const std::vector<VkImageView>& image_views, VkExtent2D extent)
+void FramebufferManager::initialize(VkDevice device, VkRenderPass render_pass, const std::vector<VkImageView>& image_views, const std::vector<VkImageView>& depth_image_views, VkExtent2D extent)
 {
     m_frameBuffers.resize(image_views.size());
 
     for (size_t i = 0; i < image_views.size(); i++)
     {
+        std::array<VkImageView, 2> attachments = {image_views[i], depth_image_views[i]};
+
         VkFramebufferCreateInfo framebufferInfo{};
         framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
         framebufferInfo.renderPass = render_pass;
-        framebufferInfo.attachmentCount = 1;
-        framebufferInfo.pAttachments = &image_views[i];
+        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        framebufferInfo.pAttachments = attachments.data();
         framebufferInfo.width = extent.width;
         framebufferInfo.height = extent.height;
         framebufferInfo.layers = 1;

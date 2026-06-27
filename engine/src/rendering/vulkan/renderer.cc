@@ -20,8 +20,11 @@ Renderer::Renderer(VulkanWindow& vulkan_window)
 
     m_deviceManager.initialize(m_instance, m_surface);
     m_swapchain.initialize(m_deviceManager.getDevice(), m_deviceManager.getPhysicalDevice(), m_surface, window_size.x, window_size.y);
-    m_renderPassManager.initialize(m_deviceManager.getDevice(), m_swapchain.getFormat());
-    m_frameBufferManager.initialize(m_deviceManager.getDevice(), m_renderPassManager.getRenderPass(), m_swapchain.getImageViews(), m_swapchain.getExtent());
+
+    m_depthFormat = findDepthFormat();
+    createDepthResources(m_swapchain.getExtent());
+    m_renderPassManager.initialize(m_deviceManager.getDevice(), m_swapchain.getFormat(), m_depthFormat);
+    m_frameBufferManager.initialize(m_deviceManager.getDevice(), m_renderPassManager.getRenderPass(), m_swapchain.getImageViews(), m_depthImageViews, m_swapchain.getExtent());
     m_pipelineManager.initialize(m_deviceManager.getDevice(), m_renderPassManager.getRenderPass(), m_swapchain.getExtent());
     m_commandBufferManager.initialize(m_deviceManager.getDevice(), m_deviceManager.getCommandPool(), m_swapchain.getImageCount());
     m_synchronization.initialize(m_deviceManager.getDevice(), m_framesInFlight, m_swapchain.getImageCount());
@@ -262,6 +265,7 @@ void Renderer::cleanSwapchain()
     m_frameBufferManager.cleanup(device);
     m_commandBufferManager.cleanup(device, command_pool);
     m_swapchain.cleanup(device);
+    cleanupDepthResources();
 }
 
 void Renderer::cleanup()
@@ -295,18 +299,120 @@ void Renderer::recreateSwapchain()
     std::cout << "New size x: " << window_size.x << " y: " << window_size.y << std::endl;
 
     m_swapchain.recreate(m_deviceManager.getPhysicalDevice(), device, m_surface, window_size.x, window_size.y);
+    createDepthResources(m_swapchain.getExtent());
     m_pipelineManager.cleanup(device);
     m_pipelineManager.initialize(device, m_renderPassManager.getRenderPass(), m_swapchain.getExtent());
     if (m_texturedDescriptorSetLayout != VK_NULL_HANDLE)
         m_pipelineManager.initializeTextured(device, m_renderPassManager.getRenderPass(), m_swapchain.getExtent(), m_texturedDescriptorSetLayout);
     if (m_uiDescriptorSetLayout != VK_NULL_HANDLE)
         m_pipelineManager.initializeUI(device, m_renderPassManager.getRenderPass(), m_swapchain.getExtent(), m_uiDescriptorSetLayout);
-    m_frameBufferManager.initialize(device, m_renderPassManager.getRenderPass(), m_swapchain.getImageViews(), m_swapchain.getExtent());
+    m_frameBufferManager.initialize(device, m_renderPassManager.getRenderPass(), m_swapchain.getImageViews(), m_depthImageViews, m_swapchain.getExtent());
     m_commandBufferManager.initialize(device, m_deviceManager.getCommandPool(), m_swapchain.getImageCount());
 
     m_synchronization.cleanup(device);
     m_synchronization.initialize(device, m_framesInFlight, m_swapchain.getImageCount());
     vkDeviceWaitIdle(device);
+}
+
+VkFormat Renderer::findDepthFormat()
+{
+    auto physDevice = m_deviceManager.getPhysicalDevice();
+    VkFormat candidates[] = {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D24_UNORM_S8_UINT, VK_FORMAT_D16_UNORM};
+    for (auto format : candidates)
+    {
+        VkFormatProperties props;
+        vkGetPhysicalDeviceFormatProperties(physDevice, format, &props);
+        if (props.optimalTilingFeatures & VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT)
+            return format;
+    }
+    throw std::runtime_error("Failed to find supported depth format!");
+}
+
+void Renderer::createDepthResources(VkExtent2D extent)
+{
+    auto device = m_deviceManager.getDevice();
+    auto physDevice = m_deviceManager.getPhysicalDevice();
+
+    uint32_t imageCount = m_swapchain.getImageCount();
+    m_depthImages.resize(imageCount);
+    m_depthMemories.resize(imageCount);
+    m_depthImageViews.resize(imageCount);
+
+    for (uint32_t i = 0; i < imageCount; i++)
+    {
+        VkImageCreateInfo imageInfo{};
+        imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        imageInfo.imageType = VK_IMAGE_TYPE_2D;
+        imageInfo.extent.width = extent.width;
+        imageInfo.extent.height = extent.height;
+        imageInfo.extent.depth = 1;
+        imageInfo.mipLevels = 1;
+        imageInfo.arrayLayers = 1;
+        imageInfo.format = m_depthFormat;
+        imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        imageInfo.usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateImage(device, &imageInfo, nullptr, &m_depthImages[i]) != VK_SUCCESS)
+            throw std::runtime_error("Failed to create depth image!");
+
+        VkMemoryRequirements memReq;
+        vkGetImageMemoryRequirements(device, m_depthImages[i], &memReq);
+
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = memReq.size;
+        allocInfo.memoryTypeIndex = [&]() -> uint32_t
+        {
+            VkPhysicalDeviceMemoryProperties memProps;
+            vkGetPhysicalDeviceMemoryProperties(physDevice, &memProps);
+            for (uint32_t j = 0; j < memProps.memoryTypeCount; j++)
+            {
+                if ((memReq.memoryTypeBits & (1u << j)) &&
+                    (memProps.memoryTypes[j].propertyFlags & VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT))
+                    return j;
+            }
+            throw std::runtime_error("Failed to find suitable memory type for depth image!");
+        }();
+
+        if (vkAllocateMemory(device, &allocInfo, nullptr, &m_depthMemories[i]) != VK_SUCCESS)
+            throw std::runtime_error("Failed to allocate depth image memory!");
+
+        vkBindImageMemory(device, m_depthImages[i], m_depthMemories[i], 0);
+
+        VkImageViewCreateInfo viewInfo{};
+        viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+        viewInfo.image = m_depthImages[i];
+        viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+        viewInfo.format = m_depthFormat;
+        viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        viewInfo.subresourceRange.baseMipLevel = 0;
+        viewInfo.subresourceRange.levelCount = 1;
+        viewInfo.subresourceRange.baseArrayLayer = 0;
+        viewInfo.subresourceRange.layerCount = 1;
+
+        if (vkCreateImageView(device, &viewInfo, nullptr, &m_depthImageViews[i]) != VK_SUCCESS)
+            throw std::runtime_error("Failed to create depth image view!");
+    }
+}
+
+void Renderer::cleanupDepthResources()
+{
+    auto device = m_deviceManager.getDevice();
+    for (size_t i = 0; i < m_depthImageViews.size(); i++)
+    {
+        if (m_depthImageViews[i] != VK_NULL_HANDLE)
+            vkDestroyImageView(device, m_depthImageViews[i], nullptr);
+        if (m_depthImages[i] != VK_NULL_HANDLE)
+            vkDestroyImage(device, m_depthImages[i], nullptr);
+        if (m_depthMemories[i] != VK_NULL_HANDLE)
+            vkFreeMemory(device, m_depthMemories[i], nullptr);
+    }
+    m_depthImages.clear();
+    m_depthMemories.clear();
+    m_depthImageViews.clear();
 }
 
 } // namespace spear::rendering::vulkan

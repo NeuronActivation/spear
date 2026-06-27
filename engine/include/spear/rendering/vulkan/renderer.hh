@@ -14,6 +14,8 @@
 #include <spear/rendering/vulkan/core/swapchain.hh>
 #include <spear/rendering/vulkan/core/synchronization.hh>
 
+#include <vulkan/vulkan.h>
+
 namespace spear
 {
 class Scene;
@@ -102,6 +104,16 @@ private:
 
     VkInstance m_instance;
     VkSurfaceKHR m_surface;
+
+    // Depth buffer resources.
+    VkFormat m_depthFormat = VK_FORMAT_D32_SFLOAT;
+    std::vector<VkImage> m_depthImages;
+    std::vector<VkDeviceMemory> m_depthMemories;
+    std::vector<VkImageView> m_depthImageViews;
+
+    VkFormat findDepthFormat();
+    void createDepthResources(VkExtent2D extent);
+    void cleanupDepthResources();
 };
 
 } // namespace spear::rendering::vulkan

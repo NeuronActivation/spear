@@ -59,7 +59,7 @@ private:
     uint32_t m_vao;
     uint32_t m_vertexCount = 0;
 
-    ModelLoader::Material m_material;
+    ModelLoader::MaterialEntry m_material;
 
     Light m_light;
 };

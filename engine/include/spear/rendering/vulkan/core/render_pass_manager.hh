@@ -9,7 +9,7 @@ namespace spear::rendering::vulkan
 class RenderPassManager
 {
 public:
-    void initialize(VkDevice device, VkFormat swapchain_image_format);
+    void initialize(VkDevice device, VkFormat swapchain_image_format, VkFormat depth_format = VK_FORMAT_D32_SFLOAT);
     void cleanup(VkDevice device);
 
     VkRenderPass getRenderPass() const

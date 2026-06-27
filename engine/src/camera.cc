@@ -25,7 +25,7 @@ glm::mat4 Camera::getViewMatrix() const
 glm::mat4 Camera::getProjectionMatrix() const
 {
     std::shared_lock lock(m_mutex);
-    return glm::perspective(glm::radians(m_fov), ASPECT_RATIO, 0.1f, 100.0f);
+    return glm::perspective(glm::radians(m_fov), ASPECT_RATIO, 1.0f, 10000.0f);
 }
 
 glm::vec3 Camera::getPosition() const

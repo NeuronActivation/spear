@@ -42,6 +42,16 @@ public:
         float specularExponent;
     };
 
+    struct MaterialEntry
+    {
+        std::string name;
+        glm::vec3 ambientColor{0.0f};
+        glm::vec3 diffuseColor{0.0f};
+        glm::vec3 specularColor{0.0f};
+        float specularExponent = 0.0f;
+        std::string texturePath;
+    };
+
     struct Animation
     {
         std::string name;

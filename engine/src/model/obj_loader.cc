@@ -1,6 +1,7 @@
 #include <spear/model/obj_loader.hh>
 #include <spear/spear_root.hh>
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <sstream>
@@ -18,7 +19,7 @@ bool OBJLoader::load(const std::string& obj_file_path, const std::string& materi
         return false;
     }
 
-    if (!material_file_path.empty() && material_file_path != "")
+    if (!material_file_path.empty())
     {
         std::string mtl_path = asset_path ? getAssetPath(material_file_path) : material_file_path;
         if (!loadMaterial(mtl_path))
@@ -52,6 +53,31 @@ bool OBJLoader::load(const std::string& obj_file_path, const std::string& materi
             lineStream >> normal.x >> normal.y >> normal.z;
             m_normals.push_back(normal);
         }
+        else if (prefix == "usemtl")
+        {
+            std::string matName;
+            lineStream >> matName;
+            // Find material index by name.
+            auto it = std::find_if(m_materials.begin(), m_materials.end(),
+                                   [&](const MaterialEntry& m)
+                                   { return m.name == matName; });
+            if (it != m_materials.end())
+            {
+                m_currentMaterialIndex = static_cast<int>(std::distance(m_materials.begin(), it));
+            }
+            else
+            {
+                // Unknown material – create a placeholder entry.
+                m_currentMaterialIndex = static_cast<int>(m_materials.size());
+                m_materials.push_back({});
+                m_materials.back().name = matName;
+            }
+            // Ensure face group exists for this material.
+            while (static_cast<size_t>(m_currentMaterialIndex) >= m_facesByMaterial.size())
+            {
+                m_facesByMaterial.emplace_back();
+            }
+        }
         else if (prefix == "f")
         {
             Face face;
@@ -73,40 +99,38 @@ bool OBJLoader::load(const std::string& obj_file_path, const std::string& materi
                     face.normalIndices.push_back(std::stoi(nIndex) - 1);
             }
 
-            // If the face is a quad (4 vertices), split it into two triangles.
-            if (face.vertexIndices.size() == 4)
+            // If no usemtl was seen, create a default material/group.
+            if (m_currentMaterialIndex < 0)
             {
-                Face tri1, tri2;
-
-                // First triangle (vertices 0, 1, 2)
-                tri1.vertexIndices = {face.vertexIndices[0], face.vertexIndices[1], face.vertexIndices[2]};
-                if (!face.textureCoordIndices.empty())
-                {
-                    tri1.textureCoordIndices = {face.textureCoordIndices[0], face.textureCoordIndices[1], face.textureCoordIndices[2]};
-                }
-                if (!face.normalIndices.empty())
-                {
-                    tri1.normalIndices = {face.normalIndices[0], face.normalIndices[1], face.normalIndices[2]};
-                }
-
-                // Second triangle (vertices 0, 2, 3)
-                tri2.vertexIndices = {face.vertexIndices[0], face.vertexIndices[2], face.vertexIndices[3]};
-                if (!face.textureCoordIndices.empty())
-                {
-                    tri2.textureCoordIndices = {face.textureCoordIndices[0], face.textureCoordIndices[2], face.textureCoordIndices[3]};
-                }
-                if (!face.normalIndices.empty())
-                {
-                    tri2.normalIndices = {face.normalIndices[0], face.normalIndices[2], face.normalIndices[3]};
-                }
-
-                // Replace quad with two triangles
-                m_faces.push_back(tri1);
-                m_faces.push_back(tri2);
+                m_currentMaterialIndex = 0;
+                if (m_materials.empty())
+                    m_materials.push_back({});
+                if (m_facesByMaterial.empty())
+                    m_facesByMaterial.emplace_back();
             }
-            else
+            while (static_cast<size_t>(m_currentMaterialIndex) >= m_facesByMaterial.size())
             {
-                m_faces.push_back(face);
+                m_facesByMaterial.emplace_back();
+            }
+
+            // Fan triangulation for convex polygons with 3+ vertices.
+            // Triangle 0: (0, 1, 2), Triangle i: (0, i+1, i+2) for i >= 1
+            for (size_t vi = 2; vi < face.vertexIndices.size(); ++vi)
+            {
+                Face tri;
+                tri.vertexIndices = {face.vertexIndices[0], face.vertexIndices[vi - 1], face.vertexIndices[vi]};
+
+                if (!face.textureCoordIndices.empty() && vi < face.textureCoordIndices.size())
+                {
+                    tri.textureCoordIndices = {face.textureCoordIndices[0], face.textureCoordIndices[vi - 1], face.textureCoordIndices[vi]};
+                }
+                if (!face.normalIndices.empty() && vi < face.normalIndices.size())
+                {
+                    tri.normalIndices = {face.normalIndices[0], face.normalIndices[vi - 1], face.normalIndices[vi]};
+                }
+
+                m_facesByMaterial[m_currentMaterialIndex].push_back(tri);
+                m_faces.push_back(tri);
             }
         }
     }
@@ -123,6 +147,11 @@ bool OBJLoader::loadMaterial(const std::string& mtlFilePath)
         return false;
     }
 
+    std::string mtlDir = getDirectory(mtlFilePath);
+    MaterialEntry* current = nullptr;
+
+    m_materials.clear();
+
     std::string line;
     while (std::getline(file, line))
     {
@@ -130,24 +159,46 @@ bool OBJLoader::loadMaterial(const std::string& mtlFilePath)
         std::string token;
         iss >> token;
 
-        if (token == "Ka") // Ambient color
+        if (token == "newmtl")
         {
-            iss >> m_material.ambientColor.r >> m_material.ambientColor.g >> m_material.ambientColor.b;
+            m_materials.push_back({});
+            current = &m_materials.back();
+            iss >> current->name;
         }
-        else if (token == "Kd") // Diffuse color
+        else if (token == "Ka" && current)
         {
-            iss >> m_material.diffuseColor.r >> m_material.diffuseColor.g >> m_material.diffuseColor.b;
+            iss >> current->ambientColor.r >> current->ambientColor.g >> current->ambientColor.b;
         }
-        else if (token == "Ks") // Specular color
+        else if (token == "Kd" && current)
         {
-            iss >> m_material.specularColor.r >> m_material.specularColor.g >> m_material.specularColor.b;
+            iss >> current->diffuseColor.r >> current->diffuseColor.g >> current->diffuseColor.b;
         }
-        else if (token == "Ns") // Specular exponent
+        else if (token == "Ks" && current)
         {
-            iss >> m_material.specularExponent;
+            iss >> current->specularColor.r >> current->specularColor.g >> current->specularColor.b;
+        }
+        else if (token == "Ns" && current)
+        {
+            iss >> current->specularExponent;
+        }
+        else if (token == "map_Kd" && current)
+        {
+            std::string filename;
+            iss >> filename;
+            // Resolve relative to the MTL directory.
+            current->texturePath = mtlDir + "/" + filename;
         }
     }
-    return true;
+
+    return !m_materials.empty();
+}
+
+std::string OBJLoader::getDirectory(const std::string& filePath)
+{
+    auto pos = filePath.find_last_of("/\\");
+    if (pos == std::string::npos)
+        return ".";
+    return filePath.substr(0, pos);
 }
 
 } // namespace spear

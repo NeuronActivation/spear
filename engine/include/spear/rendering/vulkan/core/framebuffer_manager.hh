@@ -11,7 +11,7 @@ namespace spear::rendering::vulkan
 class FramebufferManager
 {
 public:
-    void initialize(VkDevice device, VkRenderPass render_pass, const std::vector<VkImageView>& image_views, VkExtent2D extent);
+    void initialize(VkDevice device, VkRenderPass render_pass, const std::vector<VkImageView>& image_views, const std::vector<VkImageView>& depth_image_views, VkExtent2D extent);
     void cleanup(VkDevice device);
 
     const std::vector<VkFramebuffer>& getFrameBuffers() const
