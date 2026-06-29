@@ -36,12 +36,17 @@ void STBTexture::loadFromFile(const std::string& filePath)
     if (!pixels)
         throw std::runtime_error("STBTexture: failed to load image: " + filePath);
 
-    setWidth(texWidth);
-    setHeight(texHeight);
-    VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
+    loadFromRGBA(pixels, texWidth, texHeight);
+    stbi_image_free(pixels);
+}
+
+void STBTexture::loadFromRGBA(const unsigned char* pixels, int width, int height)
+{
+    setWidth(width);
+    setHeight(height);
+    VkDeviceSize imageSize = static_cast<VkDeviceSize>(width * height * 4);
 
     createTextureImage(pixels, imageSize);
-    stbi_image_free(pixels);
 
     createImageView();
     createSampler();

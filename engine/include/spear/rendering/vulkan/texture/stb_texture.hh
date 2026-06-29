@@ -15,6 +15,7 @@ public:
     static std::shared_ptr<STBTexture> create(VkDevice device, VkPhysicalDevice physDevice, VkCommandPool commandPool, VkQueue graphicsQueue, std::string assetPath);
 
     void loadFromFile(const std::string& filePath);
+    void loadFromRGBA(const unsigned char* pixels, int width, int height);
 
 private:
     void createTextureImage(const void* pixelData, VkDeviceSize imageSize);

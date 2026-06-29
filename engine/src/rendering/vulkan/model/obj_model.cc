@@ -125,8 +125,11 @@ void OBJModel::createMaterialBuffers(VkPhysicalDevice physDevice)
 
         if (!renderData.texture)
         {
-            std::cerr << "OBJModel: skipping material " << matIdx << " (no texture)" << std::endl;
-            continue;
+            auto fallback = std::make_shared<STBTexture>(
+                    m_device, m_physDevice, m_commandPool, m_graphicsQueue);
+            unsigned char whitePixel[4] = {255, 255, 255, 255};
+            fallback->loadFromRGBA(whitePixel, 1, 1);
+            renderData.texture = fallback;
         }
 
         // Build vertices for this material's faces.

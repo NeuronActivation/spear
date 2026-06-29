@@ -16,7 +16,7 @@ namespace spear
 class MovementController
 {
 public:
-    MovementController(Camera& camera, btDiscreteDynamicsWorld* physicsWorld = nullptr);
+    MovementController(Camera& camera, btDiscreteDynamicsWorld* physicsWorld = nullptr, float eyeHeight = 3.0f);
 
     void processInput(const std::unordered_map<SDL_Keycode, bool>& keyStates, float deltaTime);
 
@@ -38,11 +38,11 @@ private:
     btDiscreteDynamicsWorld* m_physicsWorld;
     float m_verticalVelocity = 0.0f;
     bool m_onGround = true;
+    float m_eyeHeight;
     std::unordered_map<SDL_Keycode, bool> m_prevKeyStates;
 
     static constexpr float GRAVITY = -30.0f;
     static constexpr float JUMP_SPEED = 10.0f;
-    static constexpr float EYE_HEIGHT = 3.0f;
 };
 
 } // namespace spear

@@ -5,9 +5,10 @@
 namespace spear
 {
 
-MovementController::MovementController(Camera& camera, btDiscreteDynamicsWorld* physicsWorld)
+MovementController::MovementController(Camera& camera, btDiscreteDynamicsWorld* physicsWorld, float eyeHeight)
     : m_camera(camera),
-      m_physicsWorld(physicsWorld)
+      m_physicsWorld(physicsWorld),
+      m_eyeHeight(eyeHeight)
 {
     m_prevKeyStates = {
             {SDLK_W, false}, {SDLK_S, false}, {SDLK_A, false}, {SDLK_D, false}, {SDLK_SPACE, false}};
@@ -68,7 +69,7 @@ void MovementController::processInput(const std::unordered_map<SDL_Keycode, bool
     if (m_physicsWorld)
     {
         btVector3 rayFrom(camPos.x, camPos.y, camPos.z);
-        btVector3 rayTo(camPos.x, camPos.y - (EYE_HEIGHT + 5.0f), camPos.z);
+        btVector3 rayTo(camPos.x, camPos.y - (m_eyeHeight + 5.0f), camPos.z);
 
         btCollisionWorld::ClosestRayResultCallback cb(rayFrom, rayTo);
         m_physicsWorld->rayTest(rayFrom, rayTo, cb);
@@ -76,11 +77,11 @@ void MovementController::processInput(const std::unordered_map<SDL_Keycode, bool
         if (cb.hasHit())
         {
             float hitY = cb.m_hitPointWorld.getY();
-            float feetY = camPos.y - EYE_HEIGHT;
+            float feetY = camPos.y - m_eyeHeight;
 
             if (feetY <= hitY + 0.1f && m_verticalVelocity <= 0.0f)
             {
-                camPos.y = hitY + EYE_HEIGHT;
+                camPos.y = hitY + m_eyeHeight;
                 m_camera.setPosition(camPos);
                 m_verticalVelocity = 0.0f;
                 m_onGround = true;

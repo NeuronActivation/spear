@@ -34,6 +34,7 @@ Object::Object(ObjectData&& object_data)
     // Sync the render transform with the initial physics position.
     auto pos = object_data.getPosition();
     Transform::translate(pos);
+    Transform::scale(object_data.getSize());
 }
 
 Object::Object(Object&& other)
