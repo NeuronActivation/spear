@@ -5,10 +5,12 @@
 namespace spear
 {
 
-MovementController::MovementController(Camera& camera, btDiscreteDynamicsWorld* physicsWorld, float eyeHeight)
+MovementController::MovementController(Camera& camera, btDiscreteDynamicsWorld* physicsWorld, float eyeHeight, float gravity, float jumpSpeed)
     : m_camera(camera),
       m_physicsWorld(physicsWorld),
-      m_eyeHeight(eyeHeight)
+      m_eyeHeight(eyeHeight),
+      m_gravity(gravity),
+      m_jumpSpeed(jumpSpeed)
 {
     m_prevKeyStates = {
             {SDLK_W, false}, {SDLK_S, false}, {SDLK_A, false}, {SDLK_D, false}, {SDLK_SPACE, false}};
@@ -49,14 +51,14 @@ void MovementController::processInput(const std::unordered_map<SDL_Keycode, bool
 
     if (spaceDown && !spaceWasDown && m_onGround)
     {
-        m_verticalVelocity = JUMP_SPEED;
+        m_verticalVelocity = m_jumpSpeed;
         m_onGround = false;
     }
 
     // --- Apply gravity ---
     if (!m_onGround)
     {
-        m_verticalVelocity += GRAVITY * deltaTime;
+        m_verticalVelocity += m_gravity * deltaTime;
     }
 
     // --- Apply vertical movement ---
