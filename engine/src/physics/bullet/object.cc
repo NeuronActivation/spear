@@ -39,11 +39,12 @@ Object::Object(ObjectData&& object_data)
 
 Object::Object(Object&& other)
     : PhysicsObject(std::move(other)),
-      m_dynamicsWorld(std::move(other.m_dynamicsWorld)),
+      m_dynamicsWorld(other.m_dynamicsWorld),
       m_collisionShape(std::move(other.m_collisionShape)),
       m_motionState(std::move(other.m_motionState)),
       m_rigidBody(std::move(other.m_rigidBody))
 {
+    other.m_dynamicsWorld = nullptr;
 }
 
 Object& Object::operator=(Object&& other)
@@ -51,7 +52,8 @@ Object& Object::operator=(Object&& other)
     if (this != &other)
     {
         PhysicsObject::operator=(std::move(other)),
-        m_dynamicsWorld = std::move(other.m_dynamicsWorld);
+        m_dynamicsWorld = other.m_dynamicsWorld;
+        other.m_dynamicsWorld = nullptr;
         m_collisionShape = std::move(other.m_collisionShape);
         m_motionState = std::move(other.m_motionState);
         m_rigidBody = std::move(other.m_rigidBody);

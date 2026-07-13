@@ -40,7 +40,7 @@ public:
     btVector3 getPosition() const;
 
 private:
-    std::unique_ptr<btDiscreteDynamicsWorld> m_dynamicsWorld;
+    btDiscreteDynamicsWorld* m_dynamicsWorld;
     std::unique_ptr<btCollisionShape> m_collisionShape;
     std::unique_ptr<btDefaultMotionState> m_motionState;
     std::unique_ptr<btRigidBody> m_rigidBody;
