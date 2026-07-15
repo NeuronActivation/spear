@@ -25,6 +25,7 @@
 // rendering core
 #include <spear/rendering/api.hh>
 #include <spear/rendering/base_model.hh>
+#include <spear/rendering/base_renderer.hh>
 #include <spear/rendering/base_shader.hh>
 #include <spear/rendering/base_sprite_3d.hh>
 #include <spear/rendering/base_texture.hh>
@@ -32,42 +33,10 @@
 #include <spear/rendering/shapes/shape.hh>
 #include <spear/rendering/shapes/textured_shape.hh>
 
-// OpenGL
-#include <spear/rendering/opengl/material.hh>
-#include <spear/rendering/opengl/model/obj_model.hh>
-#include <spear/rendering/opengl/renderer.hh>
-#include <spear/rendering/opengl/shader.hh>
-#include <spear/rendering/opengl/shapes/cube.hh>
-#include <spear/rendering/opengl/shapes/quad.hh>
-#include <spear/rendering/opengl/shapes/sphere.hh>
-#include <spear/rendering/opengl/sprite_3d.hh>
-#include <spear/rendering/opengl/texture/sdl_texture.hh>
-#include <spear/rendering/opengl/texture/stb_texture.hh>
-#include <spear/rendering/opengl/texture/texture.hh>
-
-// Vulkan
-#include <spear/rendering/vulkan/core/command_buffer_manager.hh>
-#include <spear/rendering/vulkan/core/device_manager.hh>
-#include <spear/rendering/vulkan/core/framebuffer_manager.hh>
-#include <spear/rendering/vulkan/core/pipeline_manager.hh>
-#include <spear/rendering/vulkan/core/render_pass_manager.hh>
-#include <spear/rendering/vulkan/core/swapchain.hh>
-#include <spear/rendering/vulkan/core/synchronization.hh>
-#include <spear/rendering/vulkan/frame_context.hh>
-#include <spear/rendering/vulkan/mesh.hh>
-#include <spear/rendering/vulkan/model/obj_model.hh>
-#include <spear/rendering/vulkan/renderer.hh>
-#include <spear/rendering/vulkan/shader.hh>
-#include <spear/rendering/vulkan/shapes/cube.hh>
-#include <spear/rendering/vulkan/shapes/textured_cube.hh>
-#include <spear/rendering/vulkan/sprite_3d.hh>
-#include <spear/rendering/vulkan/texture/stb_texture.hh>
-#include <spear/rendering/vulkan/texture/texture.hh>
-
-// UI
-#include <spear/ui/menu_list.hh>
-#include <spear/ui/quad_2d.hh>
-#include <spear/ui/text.hh>
-#include <spear/ui/ui_renderer.hh>
+// UI base classes
+#include <spear/ui/base_menu_list.hh>
+#include <spear/ui/base_quad_2d.hh>
+#include <spear/ui/base_text.hh>
+#include <spear/ui/base_ui_renderer.hh>
 
 #endif

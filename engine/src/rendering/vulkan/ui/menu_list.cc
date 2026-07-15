@@ -1,8 +1,8 @@
-#include <spear/ui/menu_list.hh>
+#include <spear/rendering/vulkan/ui/menu_list.hh>
 
 #include <stdexcept>
 
-namespace spear::ui
+namespace spear::ui::vulkan
 {
 
 MenuList::MenuList(VkDevice device,
@@ -54,7 +54,7 @@ void MenuList::selectNext()
 {
     if (!m_items.empty())
     {
-        m_selectedIndex = (m_selectedIndex + 1) % m_items.size();
+        m_selectedIndex = (m_selectedIndex + 1) % static_cast<int>(m_items.size());
         rebuildItems();
     }
 }
@@ -63,27 +63,19 @@ void MenuList::selectPrevious()
 {
     if (!m_items.empty())
     {
-        m_selectedIndex = (m_selectedIndex - 1 + m_items.size()) % m_items.size();
+        m_selectedIndex = (m_selectedIndex - 1 + static_cast<int>(m_items.size())) % static_cast<int>(m_items.size());
         rebuildItems();
     }
 }
 
-const std::string& MenuList::getSelectedItem() const
-{
-    if (m_items.empty())
-        throw std::runtime_error("MenuList: no items");
-    return m_items[m_selectedIndex];
-}
-
-void MenuList::render(VkCommandBuffer cmd)
+void MenuList::render(RenderContext ctx)
 {
     for (auto& text : m_texts)
-        text->render(cmd);
+        text->render(ctx);
 }
 
 void MenuList::rebuildItems()
 {
-    // Wait for GPU to finish before destroying resources that may still be in use.
     vkDeviceWaitIdle(m_device);
     m_texts.clear();
 
@@ -94,7 +86,6 @@ void MenuList::rebuildItems()
                 m_descriptorPool, m_descriptorSetLayout,
                 m_fontPath, m_fontSize);
 
-        // Highlight selected item in yellow
         if (static_cast<int>(i) == m_selectedIndex)
             text->setColor(SDL_Color{255, 255, 0, 255});
         else
@@ -107,4 +98,4 @@ void MenuList::rebuildItems()
     }
 }
 
-} // namespace spear::ui
+} // namespace spear::ui::vulkan

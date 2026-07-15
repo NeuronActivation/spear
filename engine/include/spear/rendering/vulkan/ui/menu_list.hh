@@ -1,16 +1,17 @@
-#ifndef SPEAR_UI_MENU_LIST_HH
-#define SPEAR_UI_MENU_LIST_HH
+#ifndef SPEAR_RENDERING_VULKAN_UI_MENU_LIST_HH
+#define SPEAR_RENDERING_VULKAN_UI_MENU_LIST_HH
 
-#include <spear/ui/text.hh>
+#include <spear/rendering/vulkan/ui/text.hh>
+#include <spear/ui/base_menu_list.hh>
 
 #include <memory>
 #include <string>
 #include <vector>
 
-namespace spear::ui
+namespace spear::ui::vulkan
 {
 
-class MenuList
+class MenuList : public spear::ui::BaseMenuList
 {
 public:
     MenuList(VkDevice device,
@@ -22,20 +23,15 @@ public:
              const std::string& fontPath,
              int fontSize);
 
-    void addItem(const std::string& item);
-    void clearItems();
-    void setPosition(const glm::vec2& position);
-    void setSpacing(float spacing);
+    void addItem(const std::string& item) override;
+    void clearItems() override;
+    void setPosition(const glm::vec2& position) override;
+    void setSpacing(float spacing) override;
 
-    void selectNext();
-    void selectPrevious();
-    int getSelectedIndex() const
-    {
-        return m_selectedIndex;
-    }
-    const std::string& getSelectedItem() const;
+    void selectNext() override;
+    void selectPrevious() override;
 
-    void render(VkCommandBuffer cmd);
+    void render(RenderContext ctx) override;
 
 private:
     void rebuildItems();
@@ -50,14 +46,9 @@ private:
     std::string m_fontPath;
     int m_fontSize;
 
-    glm::vec2 m_position{0.0f, 0.0f};
-    float m_spacing = 50.0f;
-    int m_selectedIndex = 0;
-
-    std::vector<std::string> m_items;
     std::vector<std::unique_ptr<Text>> m_texts;
 };
 
-} // namespace spear::ui
+} // namespace spear::ui::vulkan
 
 #endif

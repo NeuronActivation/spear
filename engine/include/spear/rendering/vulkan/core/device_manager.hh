@@ -34,8 +34,8 @@ public:
     }
 
 private:
-    bool isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface);
-    uint32_t findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface);
+    bool isDeviceSuitable(VkPhysicalDevice, VkSurfaceKHR);
+    uint32_t findQueueFamilies(VkPhysicalDevice, VkSurfaceKHR);
     void createCommandPool(uint32_t queueFamilyIndex);
 
 private:

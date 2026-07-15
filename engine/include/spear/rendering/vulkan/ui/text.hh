@@ -1,7 +1,8 @@
-#ifndef SPEAR_UI_TEXT_HH
-#define SPEAR_UI_TEXT_HH
+#ifndef SPEAR_RENDERING_VULKAN_UI_TEXT_HH
+#define SPEAR_RENDERING_VULKAN_UI_TEXT_HH
 
 #include <spear/rendering/vulkan/texture/texture.hh>
+#include <spear/ui/base_text.hh>
 
 #include <SDL3_ttf/SDL_ttf.h>
 #include <glm/vec2.hpp>
@@ -12,10 +13,10 @@
 #include <string>
 #include <vector>
 
-namespace spear::ui
+namespace spear::ui::vulkan
 {
 
-class Text
+class Text : public spear::ui::BaseText
 {
 public:
     struct Vertex
@@ -33,33 +34,21 @@ public:
          const std::string& fontPath,
          int fontSize);
 
-    ~Text();
+    ~Text() override;
 
     Text(const Text&) = delete;
     Text& operator=(const Text&) = delete;
     Text(Text&& other) noexcept;
     Text& operator=(Text&& other) noexcept;
 
-    void setString(const std::string& text);
-    void setPosition(const glm::vec2& position);
-    void setScale(float scale);
-    void setColor(const SDL_Color& color);
+    void setString(const std::string& text) override;
+    void setPosition(const glm::vec2& position) override;
+    void setScale(float scale) override;
+    void setColor(const SDL_Color& color) override;
 
-    const std::string& getString() const
-    {
-        return m_string;
-    }
-    const glm::vec2& getPosition() const
-    {
-        return m_position;
-    }
-    float getScale() const
-    {
-        return m_scale;
-    }
-    glm::vec2 getSize() const;
+    glm::vec2 getSize() const override;
 
-    void render(VkCommandBuffer cmd);
+    void render(RenderContext ctx) override;
 
 private:
     void rebuildTexture();
@@ -79,13 +68,8 @@ private:
     std::string m_fontPath;
     int m_fontSize;
 
-    std::string m_string;
-    glm::vec2 m_position{0.0f, 0.0f};
-    float m_scale = 0.002f;
-    SDL_Color m_color{255, 255, 255, 255};
-
     TTF_Font* m_font = nullptr;
-    std::shared_ptr<rendering::vulkan::Texture> m_texture;
+    std::shared_ptr<spear::rendering::vulkan::Texture> m_texture;
 
     VkBuffer m_vertexBuffer = VK_NULL_HANDLE;
     VkDeviceMemory m_vertexMemory = VK_NULL_HANDLE;
@@ -93,6 +77,6 @@ private:
     VkDescriptorSet m_descriptorSet = VK_NULL_HANDLE;
 };
 
-} // namespace spear::ui
+} // namespace spear::ui::vulkan
 
 #endif

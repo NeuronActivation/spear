@@ -1,4 +1,4 @@
-#include <spear/spear.hh>
+#include <spear/spear_vulkan.hh>
 
 #include <iostream>
 

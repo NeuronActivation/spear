@@ -150,12 +150,12 @@ VkDescriptorSetLayout Texture::createDescriptorSetLayout(VkDevice device)
     return layout;
 }
 
-void Texture::bind(uint32_t unit) const
+void Texture::bind(uint32_t) const
 {
     std::cout << "Not allowed in Vulkan" << std::endl;
 }
 
-void Texture::unbind(uint32_t unit)
+void Texture::unbind(uint32_t)
 {
     std::cout << "Not allowed in Vulkan" << std::endl;
 }

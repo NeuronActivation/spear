@@ -30,7 +30,7 @@ GameObject& GameObject::operator=(GameObject&& other)
     return *this;
 }
 
-void GameObject::updateGameObject(float delta_time)
+void GameObject::updateGameObject()
 {
     auto og_pos = Transform::getPosition();
     std::cout << "Transform x:" << og_pos.x << " y: " << og_pos.y << " z: " << og_pos.z << std::endl;

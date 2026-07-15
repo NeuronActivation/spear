@@ -1,5 +1,5 @@
-#ifndef SPEAR_RENDERING_OPENGL_BASE_MODEL_HH
-#define SPEAR_RENDERING_OPENGL_BASE_MODEL_HH
+#ifndef SPEAR_RENDERING_BASE_MODEL_HH
+#define SPEAR_RENDERING_BASE_MODEL_HH
 
 #include <spear/game_object.hh>
 #include <spear/rendering/base_shader.hh>

@@ -3,7 +3,7 @@
 
 #include <spear/camera.hh>
 #include <spear/rendering/base_renderer.hh>
-#include <spear/ui/ui_renderer.hh>
+#include <spear/rendering/vulkan/ui/ui_renderer.hh>
 #include <spear/window/vulkan_window.hh>
 
 #include <spear/rendering/vulkan/core/command_buffer_manager.hh>
@@ -45,7 +45,7 @@ public:
     /// Initialize the UI overlay pipeline. Call once after construction.
     void initializeUIPipeline(VkDescriptorSetLayout descriptorSetLayout);
 
-    void setUIRenderer(ui::UIRenderer* uiRenderer);
+    void setUIRenderer(ui::vulkan::UIRenderer* uiRenderer);
 
     void drawFrame();
 
@@ -100,7 +100,7 @@ private:
 
     Camera* m_camera = nullptr;
     Scene* m_scene = nullptr;
-    ui::UIRenderer* m_uiRenderer = nullptr;
+    ui::vulkan::UIRenderer* m_uiRenderer = nullptr;
 
     VkInstance m_instance;
     VkSurfaceKHR m_surface;

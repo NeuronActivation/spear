@@ -1,6 +1,6 @@
-#include <spear/ui/ui_renderer.hh>
+#include <spear/rendering/vulkan/ui/ui_renderer.hh>
 
-namespace spear::ui
+namespace spear::ui::vulkan
 {
 
 UIRenderer::UIRenderer(VkDevice device,
@@ -22,7 +22,7 @@ UIRenderer::UIRenderer(VkDevice device,
 {
 }
 
-void UIRenderer::addText(const std::string& text, float x, float y)
+BaseText& UIRenderer::addText(const std::string& text, float x, float y)
 {
     auto t = std::make_unique<Text>(
             m_device, m_physDevice, m_commandPool, m_graphicsQueue,
@@ -30,33 +30,38 @@ void UIRenderer::addText(const std::string& text, float x, float y)
             m_fontPath, m_fontSize);
     t->setString(text);
     t->setPosition(glm::vec2(x, y));
+    auto& ref = *t;
     m_texts.push_back(std::move(t));
+    return ref;
 }
 
-void UIRenderer::addExternalText(Text& text)
+void UIRenderer::addExternalText(BaseText& text)
 {
     m_externalTexts.push_back(&text);
 }
 
-void UIRenderer::addQuad(std::shared_ptr<rendering::vulkan::Texture> texture, float x, float y, float w, float h)
+BaseQuad2D& UIRenderer::addQuad(std::shared_ptr<spear::rendering::BaseTexture> texture, float x, float y, float w, float h)
 {
+    auto vulkanTexture = std::dynamic_pointer_cast<spear::rendering::vulkan::Texture>(texture);
     auto q = std::make_unique<Quad2D>(
             m_device, m_physDevice, m_descriptorPool, m_descriptorSetLayout,
-            std::move(texture));
+            std::move(vulkanTexture));
     q->setPosition(glm::vec2(x, y));
     q->setSize(glm::vec2(w, h));
+    auto& ref = *q;
     m_quads.push_back(std::move(q));
+    return ref;
 }
 
-MenuList& UIRenderer::createMenuList()
+BaseMenuList& UIRenderer::createMenuList()
 {
     auto menu = std::make_unique<MenuList>(
             m_device, m_physDevice, m_commandPool, m_graphicsQueue,
             m_descriptorPool, m_descriptorSetLayout,
             m_fontPath, m_fontSize);
-    auto* ptr = menu.get();
+    auto& ref = *menu;
     m_menuLists.push_back(std::move(menu));
-    return *ptr;
+    return ref;
 }
 
 void UIRenderer::clear()
@@ -67,16 +72,16 @@ void UIRenderer::clear()
     m_menuLists.clear();
 }
 
-void UIRenderer::render(VkCommandBuffer cmd)
+void UIRenderer::render(RenderContext ctx)
 {
     for (auto& t : m_texts)
-        t->render(cmd);
+        t->render(ctx);
     for (auto* t : m_externalTexts)
-        t->render(cmd);
+        t->render(ctx);
     for (auto& q : m_quads)
-        q->render(cmd);
+        q->render(ctx);
     for (auto& m : m_menuLists)
-        m->render(cmd);
+        m->render(ctx);
 }
 
-} // namespace spear::ui
+} // namespace spear::ui::vulkan

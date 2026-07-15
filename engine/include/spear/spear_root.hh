@@ -8,19 +8,20 @@ namespace spear
 {
 
 // Defined in CMake.
-static const std::string spearRoot()
+inline const std::string& spearRoot()
 {
-    return SPEAR_ROOT;
+    static const std::string root = SPEAR_ROOT;
+    return root;
 }
 
-static std::string getAssetPath(const std::string& file_name = "")
+inline std::string getAssetPath(const std::string& file_name = "")
 {
     if (std::filesystem::exists(file_name))
         return file_name;
     return spearRoot() + "/assets/" + file_name;
 }
 
-static std::string getShaderPath(const std::string& shader_name = "")
+inline std::string getShaderPath(const std::string& shader_name = "")
 {
     if (std::filesystem::exists(shader_name))
         return shader_name;

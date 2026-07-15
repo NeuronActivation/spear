@@ -1,17 +1,18 @@
-#ifndef SPEAR_UI_UI_RENDERER_HH
-#define SPEAR_UI_UI_RENDERER_HH
+#ifndef SPEAR_RENDERING_VULKAN_UI_UI_RENDERER_HH
+#define SPEAR_RENDERING_VULKAN_UI_UI_RENDERER_HH
 
-#include <spear/ui/menu_list.hh>
-#include <spear/ui/quad_2d.hh>
-#include <spear/ui/text.hh>
+#include <spear/rendering/vulkan/ui/menu_list.hh>
+#include <spear/rendering/vulkan/ui/quad_2d.hh>
+#include <spear/rendering/vulkan/ui/text.hh>
+#include <spear/ui/base_ui_renderer.hh>
 
 #include <memory>
 #include <vector>
 
-namespace spear::ui
+namespace spear::ui::vulkan
 {
 
-class UIRenderer
+class UIRenderer : public spear::ui::BaseUIRenderer
 {
 public:
     UIRenderer(VkDevice device,
@@ -23,14 +24,13 @@ public:
                const std::string& fontPath,
                int fontSize = 24);
 
-    void addText(const std::string& text, float x, float y);
-    void addExternalText(Text& text);
-    void addQuad(std::shared_ptr<rendering::vulkan::Texture> texture, float x, float y, float w, float h);
+    BaseText& addText(const std::string& text, float x, float y) override;
+    void addExternalText(BaseText& text) override;
+    BaseQuad2D& addQuad(std::shared_ptr<spear::rendering::BaseTexture> texture, float x, float y, float w, float h) override;
+    BaseMenuList& createMenuList() override;
 
-    MenuList& createMenuList();
-
-    void clear();
-    void render(VkCommandBuffer cmd);
+    void clear() override;
+    void render(RenderContext ctx) override;
 
 private:
     VkDevice m_device;
@@ -44,11 +44,11 @@ private:
     int m_fontSize;
 
     std::vector<std::unique_ptr<Text>> m_texts;
-    std::vector<Text*> m_externalTexts;
+    std::vector<BaseText*> m_externalTexts;
     std::vector<std::unique_ptr<Quad2D>> m_quads;
     std::vector<std::unique_ptr<MenuList>> m_menuLists;
 };
 
-} // namespace spear::ui
+} // namespace spear::ui::vulkan
 
 #endif

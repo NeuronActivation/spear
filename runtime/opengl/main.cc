@@ -1,4 +1,4 @@
-#include <spear/spear.hh>
+#include <spear/spear_opengl.hh>
 
 #include <iostream>
 

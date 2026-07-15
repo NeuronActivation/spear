@@ -30,7 +30,7 @@ public:
     /// Deleted copy assignment operator.
     GameObject& operator=(const GameObject&) = delete;
 
-    void updateGameObject(float delta_time);
+    void updateGameObject();
 
     uint64_t getId() const
     {

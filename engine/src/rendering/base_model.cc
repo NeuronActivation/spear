@@ -1,7 +1,5 @@
 #include <spear/rendering/base_model.hh>
 
-#include <GL/glew.h>
-
 namespace spear::rendering
 {
 

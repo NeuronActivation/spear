@@ -57,7 +57,7 @@ void Renderer::initializeUIPipeline(VkDescriptorSetLayout descriptorSetLayout)
                                    descriptorSetLayout);
 }
 
-void Renderer::setUIRenderer(ui::UIRenderer* uiRenderer)
+void Renderer::setUIRenderer(ui::vulkan::UIRenderer* uiRenderer)
 {
     m_uiRenderer = uiRenderer;
 }
@@ -202,7 +202,7 @@ void Renderer::drawFrame()
         g_frameContext.commandBuffer = commandBuffer;
         g_frameContext.uiPipeline = m_pipelineManager.getUIPipeline();
         g_frameContext.uiPipelineLayout = m_pipelineManager.getUIPipelineLayout();
-        m_uiRenderer->render(commandBuffer);
+        m_uiRenderer->render(ui::RenderContext{commandBuffer});
         g_frameContext = {};
     }
 
@@ -278,7 +278,7 @@ void Renderer::cleanup()
     m_deviceManager.cleanup();
 }
 
-void Renderer::setViewPort(int width, int height)
+void Renderer::setViewPort(int, int)
 {
     m_framebufferResized = true;
 }

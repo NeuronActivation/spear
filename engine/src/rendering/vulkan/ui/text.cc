@@ -1,12 +1,13 @@
+#include <spear/rendering/vulkan/ui/text.hh>
+
 #include <spear/rendering/vulkan/frame_context.hh>
 #include <spear/rendering/vulkan/texture/stb_texture.hh>
-#include <spear/ui/text.hh>
 
 #include <cstring>
 #include <stdexcept>
 #include <vector>
 
-namespace spear::ui
+namespace spear::ui::vulkan
 {
 
 static VkCommandBuffer beginSingleTimeCommands(VkDevice device, VkCommandPool pool)
@@ -90,9 +91,6 @@ Text::Text(Text&& other) noexcept
       m_descriptorSetLayout(other.m_descriptorSetLayout),
       m_fontPath(std::move(other.m_fontPath)),
       m_fontSize(other.m_fontSize),
-      m_string(std::move(other.m_string)),
-      m_position(other.m_position),
-      m_color(other.m_color),
       m_font(other.m_font),
       m_texture(std::move(other.m_texture)),
       m_vertexBuffer(other.m_vertexBuffer),
@@ -100,6 +98,11 @@ Text::Text(Text&& other) noexcept
       m_vertexCount(other.m_vertexCount),
       m_descriptorSet(other.m_descriptorSet)
 {
+    m_string = std::move(other.m_string);
+    m_position = other.m_position;
+    m_scale = other.m_scale;
+    m_color = other.m_color;
+
     other.m_font = nullptr;
     other.m_vertexBuffer = VK_NULL_HANDLE;
     other.m_vertexMemory = VK_NULL_HANDLE;
@@ -129,6 +132,7 @@ Text& Text::operator=(Text&& other) noexcept
         m_fontSize = other.m_fontSize;
         m_string = std::move(other.m_string);
         m_position = other.m_position;
+        m_scale = other.m_scale;
         m_color = other.m_color;
         m_font = other.m_font;
         m_texture = std::move(other.m_texture);
@@ -180,13 +184,15 @@ glm::vec2 Text::getSize() const
     return glm::vec2(0.0f, 0.0f);
 }
 
-void Text::render(VkCommandBuffer cmd)
+void Text::render(RenderContext ctx)
 {
+    auto cmd = static_cast<VkCommandBuffer>(ctx.nativeHandle);
+
     if (m_string.empty() || m_vertexBuffer == VK_NULL_HANDLE || m_descriptorSet == VK_NULL_HANDLE)
         return;
 
-    VkPipeline pipeline = rendering::vulkan::g_frameContext.uiPipeline;
-    VkPipelineLayout layout = rendering::vulkan::g_frameContext.uiPipelineLayout;
+    VkPipeline pipeline = spear::rendering::vulkan::g_frameContext.uiPipeline;
+    VkPipelineLayout layout = spear::rendering::vulkan::g_frameContext.uiPipelineLayout;
 
     if (cmd == VK_NULL_HANDLE || pipeline == VK_NULL_HANDLE || layout == VK_NULL_HANDLE)
         return;
@@ -205,10 +211,8 @@ void Text::render(VkCommandBuffer cmd)
 
 void Text::rebuildTexture()
 {
-    // Wait for GPU to finish before destroying resources that may still be in use.
     vkDeviceWaitIdle(m_device);
 
-    // Clean up old vertex buffer if it exists
     if (m_vertexBuffer != VK_NULL_HANDLE)
     {
         vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
@@ -223,12 +227,10 @@ void Text::rebuildTexture()
     if (m_string.empty())
         return;
 
-    // Render text to SDL surface
     SDL_Surface* surface = TTF_RenderText_Blended(m_font, m_string.c_str(), m_string.length(), m_color);
     if (!surface)
         throw std::runtime_error("Text: TTF_RenderText_Blended failed");
 
-    // Convert to ABGR8888 so byte order on little-endian is R,G,B,A matching VK_FORMAT_R8G8B8A8_SRGB
     SDL_Surface* converted = SDL_ConvertSurface(surface, SDL_PIXELFORMAT_ABGR8888);
     if (!converted)
     {
@@ -242,7 +244,6 @@ void Text::rebuildTexture()
     int texHeight = surface->h;
     VkDeviceSize imageSize = static_cast<VkDeviceSize>(texWidth * texHeight * 4);
 
-    // Create staging buffer for pixel data
     VkBuffer stagingBuffer;
     VkDeviceMemory stagingMemory;
     {
@@ -285,7 +286,6 @@ void Text::rebuildTexture()
 
     SDL_DestroySurface(surface);
 
-    // Create VkImage
     VkImage newImage;
     VkDeviceMemory newImageMemory;
     {
@@ -331,7 +331,6 @@ void Text::rebuildTexture()
         vkBindImageMemory(m_device, newImage, newImageMemory, 0);
     }
 
-    // Transition: UNDEFINED -> TRANSFER_DST
     {
         VkCommandBuffer cmd = beginSingleTimeCommands(m_device, m_commandPool);
         VkImageMemoryBarrier barrier{};
@@ -356,7 +355,6 @@ void Text::rebuildTexture()
         endSingleTimeCommands(m_device, m_commandPool, m_graphicsQueue, cmd);
     }
 
-    // Copy buffer to image
     {
         VkCommandBuffer cmd = beginSingleTimeCommands(m_device, m_commandPool);
         VkBufferImageCopy region{};
@@ -375,11 +373,9 @@ void Text::rebuildTexture()
         endSingleTimeCommands(m_device, m_commandPool, m_graphicsQueue, cmd);
     }
 
-    // Clean up staging resources
     vkDestroyBuffer(m_device, stagingBuffer, nullptr);
     vkFreeMemory(m_device, stagingMemory, nullptr);
 
-    // Transition: TRANSFER_DST -> SHADER_READ_ONLY
     VkImageView newImageView;
     VkSampler newSampler;
     {
@@ -405,7 +401,6 @@ void Text::rebuildTexture()
                              0, 0, nullptr, 0, nullptr, 1, &barrier);
         endSingleTimeCommands(m_device, m_commandPool, m_graphicsQueue, cmd);
 
-        // Create image view
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = newImage;
@@ -420,7 +415,6 @@ void Text::rebuildTexture()
         if (vkCreateImageView(m_device, &viewInfo, nullptr, &newImageView) != VK_SUCCESS)
             throw std::runtime_error("Text: failed to create image view");
 
-        // Create sampler
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
         samplerInfo.magFilter = VK_FILTER_LINEAR;
@@ -440,8 +434,7 @@ void Text::rebuildTexture()
             throw std::runtime_error("Text: failed to create sampler");
     }
 
-    // Create texture wrapper and set its internals via public setters
-    m_texture = std::make_shared<rendering::vulkan::STBTexture>(
+    m_texture = std::make_shared<spear::rendering::vulkan::STBTexture>(
             m_device, m_physDevice, m_commandPool, m_graphicsQueue);
     m_texture->setWidth(texWidth);
     m_texture->setHeight(texHeight);
@@ -450,7 +443,6 @@ void Text::rebuildTexture()
     m_texture->setImageView(newImageView);
     m_texture->setSampler(newSampler);
 
-    // Now rebuild the quad with the new texture dimensions
     rebuildQuad();
 }
 
@@ -459,10 +451,8 @@ void Text::rebuildQuad()
     if (!m_texture || m_string.empty())
         return;
 
-    // Wait for GPU to finish before destroying resources that may still be in use.
     vkDeviceWaitIdle(m_device);
 
-    // Clean up old vertex buffer
     if (m_vertexBuffer != VK_NULL_HANDLE)
     {
         vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
@@ -510,7 +500,6 @@ void Text::rebuildQuad()
     memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
     vkUnmapMemory(m_device, m_vertexMemory);
 
-    // Create descriptor set
     VkDescriptorSetAllocateInfo descAllocInfo{};
     descAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     descAllocInfo.descriptorPool = m_descriptorPool;
@@ -569,4 +558,4 @@ uint32_t Text::findMemoryType(VkPhysicalDevice physDevice, uint32_t typeFilter, 
     throw std::runtime_error("Text: failed to find suitable memory type");
 }
 
-} // namespace spear::ui
+} // namespace spear::ui::vulkan

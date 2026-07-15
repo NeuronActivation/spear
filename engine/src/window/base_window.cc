@@ -1,7 +1,6 @@
 #include <SDL3/SDL_video.h>
 #include <spear/window/base_window.hh>
 
-#include <GL/glew.h>
 #include <SDL3/SDL.h>
 
 #include <iostream>

@@ -75,13 +75,13 @@ void DeviceManager::cleanup()
     }
 }
 
-bool DeviceManager::isDeviceSuitable(VkPhysicalDevice device, VkSurfaceKHR surface)
+bool DeviceManager::isDeviceSuitable(VkPhysicalDevice, VkSurfaceKHR)
 {
     // Assume all devices are suitable.
     return true;
 }
 
-uint32_t DeviceManager::findQueueFamilies(VkPhysicalDevice device, VkSurfaceKHR surface)
+uint32_t DeviceManager::findQueueFamilies(VkPhysicalDevice, VkSurfaceKHR)
 {
     // Assume queue family index 0 is suitable.
     return 0;

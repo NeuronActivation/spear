@@ -1,17 +1,18 @@
+#include <spear/rendering/vulkan/ui/quad_2d.hh>
+
 #include <spear/rendering/vulkan/frame_context.hh>
-#include <spear/ui/quad_2d.hh>
 
 #include <cstring>
 #include <stdexcept>
 
-namespace spear::ui
+namespace spear::ui::vulkan
 {
 
 Quad2D::Quad2D(VkDevice device,
                VkPhysicalDevice physDevice,
                VkDescriptorPool descriptorPool,
                VkDescriptorSetLayout descriptorSetLayout,
-               std::shared_ptr<rendering::vulkan::Texture> texture)
+               std::shared_ptr<spear::rendering::vulkan::Texture> texture)
     : m_device(device),
       m_descriptorPool(descriptorPool),
       m_descriptorSetLayout(descriptorSetLayout),
@@ -37,10 +38,11 @@ Quad2D::Quad2D(Quad2D&& other) noexcept
       m_descriptorPool(other.m_descriptorPool),
       m_descriptorSetLayout(other.m_descriptorSetLayout),
       m_descriptorSet(other.m_descriptorSet),
-      m_texture(std::move(other.m_texture)),
-      m_position(other.m_position),
-      m_size(other.m_size)
+      m_texture(std::move(other.m_texture))
 {
+    m_position = other.m_position;
+    m_size = other.m_size;
+
     other.m_vertexBuffer = VK_NULL_HANDLE;
     other.m_vertexMemory = VK_NULL_HANDLE;
     other.m_descriptorSet = VK_NULL_HANDLE;
@@ -83,10 +85,12 @@ void Quad2D::setSize(const glm::vec2& size)
     m_size = size;
 }
 
-void Quad2D::render(VkCommandBuffer cmd)
+void Quad2D::render(RenderContext ctx)
 {
-    VkPipeline pipeline = rendering::vulkan::g_frameContext.uiPipeline;
-    VkPipelineLayout layout = rendering::vulkan::g_frameContext.uiPipelineLayout;
+    auto cmd = static_cast<VkCommandBuffer>(ctx.nativeHandle);
+
+    VkPipeline pipeline = spear::rendering::vulkan::g_frameContext.uiPipeline;
+    VkPipelineLayout layout = spear::rendering::vulkan::g_frameContext.uiPipelineLayout;
 
     if (cmd == VK_NULL_HANDLE || pipeline == VK_NULL_HANDLE || layout == VK_NULL_HANDLE)
         return;
@@ -199,4 +203,4 @@ uint32_t Quad2D::findMemoryType(VkPhysicalDevice physDevice, uint32_t typeFilter
     throw std::runtime_error("Quad2D: failed to find suitable memory type!");
 }
 
-} // namespace spear::ui
+} // namespace spear::ui::vulkan
