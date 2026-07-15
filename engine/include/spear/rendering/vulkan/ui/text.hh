@@ -32,7 +32,8 @@ public:
          VkDescriptorPool descriptorPool,
          VkDescriptorSetLayout descriptorSetLayout,
          const std::string& fontPath,
-         int fontSize);
+         int fontSize,
+         float scale = 0.002f);
 
     ~Text() override;
 

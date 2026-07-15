@@ -50,7 +50,8 @@ Text::Text(VkDevice device,
            VkDescriptorPool descriptorPool,
            VkDescriptorSetLayout descriptorSetLayout,
            const std::string& fontPath,
-           int fontSize)
+           int fontSize,
+           float scale)
     : m_device(device),
       m_physDevice(physDevice),
       m_commandPool(commandPool),
@@ -60,6 +61,7 @@ Text::Text(VkDevice device,
       m_fontPath(fontPath),
       m_fontSize(fontSize)
 {
+    m_scale = scale;
     if (!TTF_WasInit())
     {
         TTF_Init();

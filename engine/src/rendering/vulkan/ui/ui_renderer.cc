@@ -10,7 +10,8 @@ UIRenderer::UIRenderer(VkDevice device,
                        VkDescriptorPool descriptorPool,
                        VkDescriptorSetLayout descriptorSetLayout,
                        const std::string& fontPath,
-                       int fontSize)
+                       int fontSize,
+                       float textScale)
     : m_device(device),
       m_physDevice(physDevice),
       m_commandPool(commandPool),
@@ -18,7 +19,8 @@ UIRenderer::UIRenderer(VkDevice device,
       m_descriptorPool(descriptorPool),
       m_descriptorSetLayout(descriptorSetLayout),
       m_fontPath(fontPath),
-      m_fontSize(fontSize)
+      m_fontSize(fontSize),
+      m_textScale(textScale)
 {
 }
 
@@ -27,7 +29,7 @@ BaseText& UIRenderer::addText(const std::string& text, float x, float y)
     auto t = std::make_unique<Text>(
             m_device, m_physDevice, m_commandPool, m_graphicsQueue,
             m_descriptorPool, m_descriptorSetLayout,
-            m_fontPath, m_fontSize);
+            m_fontPath, m_fontSize, m_textScale);
     t->setString(text);
     t->setPosition(glm::vec2(x, y));
     auto& ref = *t;
@@ -58,7 +60,7 @@ BaseMenuList& UIRenderer::createMenuList()
     auto menu = std::make_unique<MenuList>(
             m_device, m_physDevice, m_commandPool, m_graphicsQueue,
             m_descriptorPool, m_descriptorSetLayout,
-            m_fontPath, m_fontSize);
+            m_fontPath, m_fontSize, m_textScale);
     auto& ref = *menu;
     m_menuLists.push_back(std::move(menu));
     return ref;

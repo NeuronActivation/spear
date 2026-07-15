@@ -12,7 +12,8 @@ MenuList::MenuList(VkDevice device,
                    VkDescriptorPool descriptorPool,
                    VkDescriptorSetLayout descriptorSetLayout,
                    const std::string& fontPath,
-                   int fontSize)
+                   int fontSize,
+                   float textScale)
     : m_device(device),
       m_physDevice(physDevice),
       m_commandPool(commandPool),
@@ -20,7 +21,8 @@ MenuList::MenuList(VkDevice device,
       m_descriptorPool(descriptorPool),
       m_descriptorSetLayout(descriptorSetLayout),
       m_fontPath(fontPath),
-      m_fontSize(fontSize)
+      m_fontSize(fontSize),
+      m_textScale(textScale)
 {
 }
 
@@ -84,7 +86,7 @@ void MenuList::rebuildItems()
         auto text = std::make_unique<Text>(
                 m_device, m_physDevice, m_commandPool, m_graphicsQueue,
                 m_descriptorPool, m_descriptorSetLayout,
-                m_fontPath, m_fontSize);
+                m_fontPath, m_fontSize, m_textScale);
 
         if (static_cast<int>(i) == m_selectedIndex)
             text->setColor(SDL_Color{255, 255, 0, 255});

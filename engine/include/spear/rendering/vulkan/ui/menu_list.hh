@@ -21,7 +21,8 @@ public:
              VkDescriptorPool descriptorPool,
              VkDescriptorSetLayout descriptorSetLayout,
              const std::string& fontPath,
-             int fontSize);
+             int fontSize,
+             float textScale = 0.002f);
 
     void addItem(const std::string& item) override;
     void clearItems() override;
@@ -45,6 +46,7 @@ private:
 
     std::string m_fontPath;
     int m_fontSize;
+    float m_textScale;
 
     std::vector<std::unique_ptr<Text>> m_texts;
 };

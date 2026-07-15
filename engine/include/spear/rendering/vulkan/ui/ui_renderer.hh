@@ -22,7 +22,8 @@ public:
                VkDescriptorPool descriptorPool,
                VkDescriptorSetLayout descriptorSetLayout,
                const std::string& fontPath,
-               int fontSize = 24);
+               int fontSize = 24,
+               float textScale = 0.002f);
 
     BaseText& addText(const std::string& text, float x, float y) override;
     void addExternalText(BaseText& text) override;
@@ -42,6 +43,7 @@ private:
 
     std::string m_fontPath;
     int m_fontSize;
+    float m_textScale;
 
     std::vector<std::unique_ptr<Text>> m_texts;
     std::vector<BaseText*> m_externalTexts;

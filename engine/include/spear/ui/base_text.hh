@@ -54,7 +54,7 @@ public:
 protected:
     std::string m_string;
     glm::vec2 m_position{0.0f, 0.0f};
-    float m_scale = 1.0f;
+    float m_scale = 0.0f;
     SDL_Color m_color{255, 255, 255, 255};
 };
 
