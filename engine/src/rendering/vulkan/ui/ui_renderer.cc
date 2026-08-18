@@ -74,8 +74,15 @@ void UIRenderer::clear()
     m_menuLists.clear();
 }
 
+void UIRenderer::setOverlayCallback(std::function<void()> callback)
+{
+    m_overlayCallback = std::move(callback);
+}
+
 void UIRenderer::render(RenderContext ctx)
 {
+    if (m_overlayCallback)
+        m_overlayCallback();
     for (auto& t : m_texts)
         t->render(ctx);
     for (auto* t : m_externalTexts)

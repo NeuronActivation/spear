@@ -6,6 +6,7 @@
 #include <spear/rendering/vulkan/ui/text.hh>
 #include <spear/ui/base_ui_renderer.hh>
 
+#include <functional>
 #include <memory>
 #include <vector>
 
@@ -30,6 +31,8 @@ public:
     BaseQuad2D& addQuad(std::shared_ptr<spear::rendering::BaseTexture> texture, float x, float y, float w, float h) override;
     BaseMenuList& createMenuList() override;
 
+    void setOverlayCallback(std::function<void()> callback);
+
     void clear() override;
     void render(RenderContext ctx) override;
 
@@ -49,6 +52,7 @@ private:
     std::vector<BaseText*> m_externalTexts;
     std::vector<std::unique_ptr<Quad2D>> m_quads;
     std::vector<std::unique_ptr<MenuList>> m_menuLists;
+    std::function<void()> m_overlayCallback;
 };
 
 } // namespace spear::ui::vulkan
