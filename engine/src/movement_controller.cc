@@ -2,6 +2,8 @@
 
 #include <btBulletDynamicsCommon.h>
 
+#include <algorithm>
+
 namespace spear
 {
 
@@ -39,9 +41,44 @@ void MovementController::processInput(const std::unordered_map<SDL_Keycode, bool
     if (glm::length(direction) > 0.0f)
     {
         direction = glm::normalize(direction);
-        camPos += direction * m_camera.getSpeed() * deltaTime;
-        camPos.y = m_camera.getPosition().y;
-        m_camera.setPosition(camPos);
+        glm::vec3 targetPos = camPos + direction * m_camera.getSpeed() * deltaTime;
+        targetPos.y = camPos.y;
+
+        // --- Horizontal collision check (prevent walking through walls) ---
+        if (m_physicsWorld)
+        {
+            const float radius = m_eyeHeight * 0.12f;
+            const float totalHeight = m_eyeHeight * 0.9f;
+            const float halfHeight = totalHeight * 0.5f;
+            const float bottomClearance = m_eyeHeight * 0.15f;
+
+            // Capsule spanning from slightly above the feet up to the head.
+            btCapsuleShape capsule(radius, totalHeight - 2.0f * radius);
+
+            auto capsuleOriginY = [this, halfHeight, bottomClearance](float headY)
+            {
+                return headY - m_eyeHeight + bottomClearance + halfHeight;
+            };
+
+            btTransform from;
+            from.setIdentity();
+            from.setOrigin(btVector3(camPos.x, capsuleOriginY(camPos.y), camPos.z));
+            btTransform to;
+            to.setIdentity();
+            to.setOrigin(btVector3(targetPos.x, capsuleOriginY(targetPos.y), targetPos.z));
+
+            btCollisionWorld::ClosestConvexResultCallback sweep(from.getOrigin(), to.getOrigin());
+            m_physicsWorld->convexSweepTest(&capsule, from, to, sweep);
+
+            if (sweep.hasHit())
+            {
+                // Stop a little before the obstacle so we don't get embedded in it.
+                float hitFraction = std::max(0.0f, sweep.m_closestHitFraction - 0.01f);
+                targetPos = camPos + (targetPos - camPos) * hitFraction;
+            }
+        }
+
+        m_camera.setPosition(targetPos);
     }
 
     // --- Jump (edge-triggered on space press) ---
