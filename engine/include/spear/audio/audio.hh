@@ -68,6 +68,14 @@ public:
     /// Play the clip; safe to call repeatedly for rapid fire.
     void play();
 
+    /// Set the clip volume (0.0 = silent, 1.0 = full). Applied to all voices.
+    void setVolume(float volume);
+
+    float getVolume() const
+    {
+        return m_volume;
+    }
+
 private:
     friend class AudioSystem;
 
@@ -84,6 +92,7 @@ private:
     std::vector<std::uint8_t> m_data;
     std::vector<Voice> m_voices;
     std::size_t m_nextVoice = 0;
+    float m_volume = 1.0f;
 };
 
 } // namespace spear::audio

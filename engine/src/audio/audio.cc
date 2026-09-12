@@ -2,6 +2,7 @@
 
 #include <SDL3/SDL.h>
 
+#include <algorithm>
 #include <iostream>
 
 namespace spear::audio
@@ -107,6 +108,7 @@ Sound::Sound(AudioSystem& system, const std::string& filepath)
             break;
         }
         SDL_BindAudioStream(m_system.getDeviceId(), voice.stream);
+        SDL_SetAudioStreamGain(voice.stream, m_volume);
         m_voices.push_back(voice);
     }
 
@@ -158,6 +160,18 @@ void Sound::play()
     }
     SDL_FlushAudioStream(voice->stream);
     voice->playing = true;
+}
+
+void Sound::setVolume(float volume)
+{
+    m_volume = std::clamp(volume, 0.0f, 1.0f);
+    for (auto& voice : m_voices)
+    {
+        if (voice.stream)
+        {
+            SDL_SetAudioStreamGain(voice.stream, m_volume);
+        }
+    }
 }
 
 void Sound::updateVoices()
