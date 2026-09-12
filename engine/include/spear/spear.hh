@@ -1,6 +1,7 @@
 #ifndef SPEAR_SPEAR_HH
 #define SPEAR_SPEAR_HH
 
+#include <spear/audio/audio.hh>
 #include <spear/camera.hh>
 #include <spear/create_scene.hh>
 #include <spear/event_handler.hh>
