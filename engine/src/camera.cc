@@ -1,6 +1,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <spear/camera.hh>
 
+#include <algorithm>
+#include <cmath>
+#include <mutex>
+
 namespace spear
 {
 
@@ -19,7 +23,12 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch, float m
 glm::mat4 Camera::getViewMatrix() const
 {
     std::shared_lock lock(m_mutex);
-    return glm::lookAt(m_position, m_position + m_front, m_up);
+    // Apply the recoil aim-punch to the view direction so the world kicks
+    // without permanently altering yaw/pitch.
+    glm::mat4 recoil = recoilRotation();
+    glm::vec3 front = glm::normalize(glm::vec3(recoil * glm::vec4(m_front, 0.0f)));
+    glm::vec3 up = glm::normalize(glm::vec3(recoil * glm::vec4(m_up, 0.0f)));
+    return glm::lookAt(m_position, m_position + front, up);
 }
 
 glm::mat4 Camera::getProjectionMatrix() const
@@ -50,21 +59,27 @@ glm::vec3 Camera::getWorldUp() const
 glm::vec3 Camera::getUp() const
 {
     std::shared_lock lock(m_mutex);
-    return m_up;
+    if (m_recoilPitch == 0.0f && m_recoilYaw == 0.0f)
+        return m_up;
+    return glm::normalize(glm::vec3(recoilRotation() * glm::vec4(m_up, 0.0f)));
 }
 
 /// \ingroup CameraGetters
 glm::vec3 Camera::getFront() const
 {
     std::shared_lock lock(m_mutex);
-    return m_front;
+    if (m_recoilPitch == 0.0f && m_recoilYaw == 0.0f)
+        return m_front;
+    return glm::normalize(glm::vec3(recoilRotation() * glm::vec4(m_front, 0.0f)));
 }
 
 /// \ingroup CameraGetters
 glm::vec3 Camera::getRight() const
 {
     std::shared_lock lock(m_mutex);
-    return m_right;
+    if (m_recoilPitch == 0.0f && m_recoilYaw == 0.0f)
+        return m_right;
+    return glm::normalize(glm::vec3(recoilRotation() * glm::vec4(m_right, 0.0f)));
 }
 
 void Camera::moveForward(float delta_time)
@@ -107,6 +122,40 @@ void Camera::setPosition(const glm::vec3& newPosition)
 {
     std::shared_lock lock(m_mutex);
     m_position = newPosition;
+}
+
+glm::mat4 Camera::recoilRotation() const
+{
+    glm::mat4 recoil = glm::rotate(glm::mat4(1.0f), glm::radians(m_recoilPitch), m_right);
+    recoil = glm::rotate(recoil, glm::radians(m_recoilYaw), m_worldUp);
+    return recoil;
+}
+
+void Camera::addRecoilOffset(float pitch, float yaw)
+{
+    std::unique_lock lock(m_mutex);
+    m_recoilPitch += pitch;
+    m_recoilYaw += yaw;
+    if (m_recoilPitch > 6.0f)
+        m_recoilPitch = 6.0f;
+    if (m_recoilPitch < -6.0f)
+        m_recoilPitch = -6.0f;
+    if (m_recoilYaw > 4.0f)
+        m_recoilYaw = 4.0f;
+    if (m_recoilYaw < -4.0f)
+        m_recoilYaw = -4.0f;
+}
+
+void Camera::updateRecoil(float delta_time)
+{
+    std::unique_lock lock(m_mutex);
+    float decay = std::max(0.0f, 1.0f - 9.0f * delta_time);
+    m_recoilPitch *= decay;
+    m_recoilYaw *= decay;
+    if (std::abs(m_recoilPitch) < 0.01f)
+        m_recoilPitch = 0.0f;
+    if (std::abs(m_recoilYaw) < 0.01f)
+        m_recoilYaw = 0.0f;
 }
 
 void Camera::rotate(float xoffset, float yoffset, bool constrain_pitch)

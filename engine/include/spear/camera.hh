@@ -76,9 +76,20 @@ public:
 
     void setPosition(const glm::vec3& newPosition);
 
+    // Aim punch (CS-style recoil) ---
+    // Transient view offset produced by firing. It does not permanently
+    // change the camera's yaw/pitch; instead it rotates the view (and the
+    // front/up/right vectors returned by the getters) and decays back to
+    // zero over time.
+    void addRecoilOffset(float pitch, float yaw);
+    void updateRecoil(float delta_time);
+
 private:
     // Updates front, right, and up vectors based on updated Euler angles
     void updateCameraVectors();
+
+    // Rotation matrix applying the current recoil (aim punch) offsets.
+    glm::mat4 recoilRotation() const;
 
 private:
     // Camera Attributes.
@@ -96,6 +107,10 @@ private:
     float m_movementSpeed;
     float m_mouseSensitivity;
     float m_fov;
+
+    // Aim punch offsets (degrees). Positive pitch kicks the view upward.
+    float m_recoilPitch = 0.0f;
+    float m_recoilYaw = 0.0f;
 
     mutable std::shared_mutex m_mutex;
 };
