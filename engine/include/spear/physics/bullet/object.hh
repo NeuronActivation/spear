@@ -37,7 +37,16 @@ public:
     void applyForce(const btVector3& force);
     void applyGravity();
 
+    /// Replace the collision box with the given half-extents, keeping the
+    /// visual transform (driven by ObjectData::getSize) unchanged.
+    void setCollisionSize(const btVector3& half_extents);
+
     btVector3 getPosition() const;
+
+    btRigidBody* getRigidBody() const
+    {
+        return m_rigidBody.get();
+    }
 
 private:
     btDiscreteDynamicsWorld* m_dynamicsWorld;

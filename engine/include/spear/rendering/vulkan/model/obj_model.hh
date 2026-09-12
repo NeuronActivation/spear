@@ -25,7 +25,8 @@ public:
              const std::string& material_file_path,
              VkDescriptorPool descriptorPool,
              VkDescriptorSetLayout descriptorSetLayout,
-             physics::bullet::ObjectData&& object_data);
+             physics::bullet::ObjectData&& object_data,
+             bool flip_winding = true);
 
     ~OBJModel();
 
@@ -69,6 +70,7 @@ private:
     VkQueue m_graphicsQueue = VK_NULL_HANDLE;
     VkDescriptorPool m_descriptorPool = VK_NULL_HANDLE;
     VkDescriptorSetLayout m_descriptorSetLayout = VK_NULL_HANDLE;
+    bool m_flipWinding = true;
 };
 
 } // namespace spear::rendering::vulkan

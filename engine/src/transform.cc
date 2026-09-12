@@ -36,6 +36,11 @@ Transform& Transform::operator=(Transform&& other)
     return *this;
 }
 
+void Transform::setModel(const glm::mat4& model)
+{
+    m_model = model;
+}
+
 void Transform::setPosition(const glm::vec3& position)
 {
     m_model[3] = glm::vec4(position, 1.0f);

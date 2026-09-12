@@ -37,14 +37,16 @@ OBJModel::OBJModel(VkDevice device,
                    const std::string& material_file_path,
                    VkDescriptorPool descriptorPool,
                    VkDescriptorSetLayout descriptorSetLayout,
-                   physics::bullet::ObjectData&& object_data)
+                   physics::bullet::ObjectData&& object_data,
+                   bool flip_winding)
     : BaseModel(nullptr, std::move(object_data)),
       m_device(device),
       m_physDevice(physDevice),
       m_commandPool(commandPool),
       m_graphicsQueue(graphicsQueue),
       m_descriptorPool(descriptorPool),
-      m_descriptorSetLayout(descriptorSetLayout)
+      m_descriptorSetLayout(descriptorSetLayout),
+      m_flipWinding(flip_winding)
 {
     m_loader.load(object_file_path, material_file_path);
     createMaterialBuffers(physDevice);
@@ -222,9 +224,9 @@ std::vector<OBJModel::Vertex> OBJModel::buildVertices(const std::vector<ModelLoa
 
             tri.push_back(v);
         }
-        // Reverse winding (swap v1 and v2) so that after the shader's Y-flip
-        // the triangles are CW in Vulkan framebuffer space (VK_FRONT_FACE_CLOCKWISE).
-        if (tri.size() == 3)
+        // Reverse winding so that after the shader's Y-flip the triangles are
+        // CW in Vulkan framebuffer space (VK_FRONT_FACE_CLOCKWISE).
+        if (m_flipWinding && tri.size() == 3)
             std::swap(tri[1], tri[2]);
         vertices.insert(vertices.end(), tri.begin(), tri.end());
     }

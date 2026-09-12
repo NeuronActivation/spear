@@ -90,6 +90,23 @@ void Object::applyGravity()
     }
 }
 
+void Object::setCollisionSize(const btVector3& half_extents)
+{
+    if (!m_rigidBody)
+        return;
+
+    m_collisionShape = std::make_unique<btBoxShape>(half_extents);
+
+    btVector3 localInertia(0, 0, 0);
+    if (m_mass != 0.0f)
+        m_collisionShape->calculateLocalInertia(m_mass, localInertia);
+
+    m_rigidBody->setCollisionShape(m_collisionShape.get());
+    m_rigidBody->setMassProps(m_mass, localInertia);
+    m_rigidBody->updateInertiaTensor();
+    m_rigidBody->activate();
+}
+
 btVector3 Object::getPosition() const
 {
     btTransform transform;
