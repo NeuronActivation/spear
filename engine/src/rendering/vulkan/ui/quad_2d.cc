@@ -78,11 +78,13 @@ Quad2D& Quad2D::operator=(Quad2D&& other) noexcept
 void Quad2D::setPosition(const glm::vec2& position)
 {
     m_position = position;
+    updateVertexBuffer();
 }
 
 void Quad2D::setSize(const glm::vec2& size)
 {
     m_size = size;
+    updateVertexBuffer();
 }
 
 void Quad2D::render(RenderContext ctx)
@@ -135,6 +137,21 @@ void Quad2D::createVertexBuffer(VkPhysicalDevice physDevice)
         throw std::runtime_error("Quad2D: failed to allocate vertex buffer memory!");
 
     vkBindBufferMemory(m_device, m_vertexBuffer, m_vertexMemory, 0);
+
+    void* data;
+    vkMapMemory(m_device, m_vertexMemory, 0, bufferSize, 0, &data);
+    memcpy(data, vertices.data(), static_cast<size_t>(bufferSize));
+    vkUnmapMemory(m_device, m_vertexMemory);
+}
+
+void Quad2D::updateVertexBuffer()
+{
+    if (m_vertexBuffer == VK_NULL_HANDLE || m_vertexMemory == VK_NULL_HANDLE)
+        return;
+
+    vkDeviceWaitIdle(m_device);
+    auto vertices = buildVertices();
+    VkDeviceSize bufferSize = sizeof(Vertex) * vertices.size();
 
     void* data;
     vkMapMemory(m_device, m_vertexMemory, 0, bufferSize, 0, &data);

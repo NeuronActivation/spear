@@ -117,6 +117,11 @@ Text& Text::operator=(Text&& other) noexcept
     {
         if (m_vertexBuffer != VK_NULL_HANDLE || m_vertexMemory != VK_NULL_HANDLE)
             vkDeviceWaitIdle(m_device);
+        if (m_descriptorSet != VK_NULL_HANDLE)
+        {
+            vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_descriptorSet);
+            m_descriptorSet = VK_NULL_HANDLE;
+        }
         if (m_vertexBuffer != VK_NULL_HANDLE)
             vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
         if (m_vertexMemory != VK_NULL_HANDLE)
@@ -454,6 +459,12 @@ void Text::rebuildQuad()
         return;
 
     vkDeviceWaitIdle(m_device);
+
+    if (m_descriptorSet != VK_NULL_HANDLE)
+    {
+        vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_descriptorSet);
+        m_descriptorSet = VK_NULL_HANDLE;
+    }
 
     if (m_vertexBuffer != VK_NULL_HANDLE)
     {

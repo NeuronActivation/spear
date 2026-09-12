@@ -37,6 +37,7 @@ public:
 
 private:
     void createVertexBuffer(VkPhysicalDevice physDevice);
+    void updateVertexBuffer();
     void createDescriptorSet();
 
     struct Vertex
