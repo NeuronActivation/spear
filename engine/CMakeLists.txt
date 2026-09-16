@@ -11,6 +11,7 @@ list(PREPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 find_package(SDL3 REQUIRED)
 find_package(SDL3_image REQUIRED)
 find_package(SDL3_ttf REQUIRED)
+find_package(SDL3_mixer REQUIRED)
 find_package(OpenGL REQUIRED)
 find_package(GLEW REQUIRED)
 find_package(Vulkan REQUIRED)
@@ -38,6 +39,7 @@ target_compile_definitions(spear PUBLIC SPEAR_ROOT="${SPEAR_ROOT}")
 
 target_link_libraries(spear
     PRIVATE SDL3::SDL3 SDL3_image::SDL3_image SDL3_ttf::SDL3_ttf
+    PRIVATE SDL3_mixer::SDL3_mixer
     PRIVATE OpenGL::GL GLEW::GLEW
     PRIVATE Vulkan::Vulkan
     PRIVATE ${BULLET_LIBRARIES}

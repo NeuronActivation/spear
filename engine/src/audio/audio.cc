@@ -1,9 +1,11 @@
 #include <spear/audio/audio.hh>
 
 #include <SDL3/SDL.h>
+#include <SDL3_mixer/SDL_mixer.h>
 
 #include <algorithm>
 #include <iostream>
+#include <string>
 
 namespace spear::audio
 {
@@ -11,6 +13,67 @@ namespace spear::audio
 namespace
 {
 constexpr std::size_t kMaxVoices = 8;
+constexpr int kDecodeChunkBytes = 8192;
+
+bool isWavFile(const std::string& filepath)
+{
+    const auto dot = filepath.find_last_of('.');
+    if (dot == std::string::npos)
+        return false;
+    const auto ext = filepath.substr(dot + 1);
+    return ext == "wav" || ext == "WAV";
+}
+
+/// Register SDL_mixer's decoders (MP3/OGG/FLAC) exactly once.
+bool ensureMixerInitialized()
+{
+    static const bool initialized = MIX_Init();
+    if (!initialized)
+        std::cerr << "spear::audio::Sound: SDL_mixer init failed: " << SDL_GetError() << std::endl;
+    return initialized;
+}
+
+/// Fully decode a non-WAV clip into the playback device's own format, so the
+/// pre-created voice streams can consume the bytes without any conversion.
+/// Returns false on failure or unexpected end-of-file.
+bool decodeNonWav(const std::string& filepath,
+                  const SDL_AudioSpec& deviceSpec,
+                  SDL_AudioSpec& outSpec,
+                  std::vector<std::uint8_t>& outData)
+{
+    if (!ensureMixerInitialized())
+        return false;
+
+    MIX_AudioDecoder* decoder = MIX_CreateAudioDecoder(filepath.c_str(), 0);
+    if (!decoder)
+    {
+        std::cerr << "spear::audio::Sound: failed to create decoder for '" << filepath
+                  << "': " << SDL_GetError() << std::endl;
+        return false;
+    }
+
+    outSpec = deviceSpec;
+    std::vector<std::uint8_t> chunk(kDecodeChunkBytes);
+    std::vector<std::uint8_t> audio;
+    for (;;)
+    {
+        const int decoded = MIX_DecodeAudio(decoder, chunk.data(), kDecodeChunkBytes, &outSpec);
+        if (decoded < 0)
+        {
+            std::cerr << "spear::audio::Sound: failed to decode '" << filepath
+                      << "': " << SDL_GetError() << std::endl;
+            MIX_DestroyAudioDecoder(decoder);
+            return false;
+        }
+        if (decoded == 0)
+            break;
+        audio.insert(audio.end(), chunk.begin(), chunk.begin() + decoded);
+    }
+    MIX_DestroyAudioDecoder(decoder);
+
+    outData = std::move(audio);
+    return !outData.empty();
+}
 
 } // namespace
 
@@ -21,6 +84,7 @@ AudioSystem::~AudioSystem()
         SDL_CloseAudioDevice(m_deviceId);
         m_deviceId = 0;
     }
+    MIX_Quit();
     SDL_QuitSubSystem(SDL_INIT_AUDIO);
 }
 
@@ -82,18 +146,25 @@ void AudioSystem::unregisterSound(Sound* sound)
 Sound::Sound(AudioSystem& system, const std::string& filepath)
     : m_system(system)
 {
-    SDL_AudioSpec loaded_spec{};
-    Uint8* audio_buf = nullptr;
-    Uint32 audio_len = 0;
-    if (!SDL_LoadWAV(filepath.c_str(), &loaded_spec, &audio_buf, &audio_len))
+    if (isWavFile(filepath))
     {
-        std::cerr << "spear::audio::Sound: failed to load '" << filepath << "': " << SDL_GetError() << std::endl;
+        SDL_AudioSpec loaded_spec{};
+        Uint8* audio_buf = nullptr;
+        Uint32 audio_len = 0;
+        if (!SDL_LoadWAV(filepath.c_str(), &loaded_spec, &audio_buf, &audio_len))
+        {
+            std::cerr << "spear::audio::Sound: failed to load '" << filepath << "': " << SDL_GetError() << std::endl;
+            return;
+        }
+
+        m_spec = loaded_spec;
+        m_data.assign(audio_buf, audio_buf + audio_len);
+        SDL_free(audio_buf);
+    }
+    else if (!decodeNonWav(filepath, m_system.getDeviceSpec(), m_spec, m_data))
+    {
         return;
     }
-
-    m_spec = loaded_spec;
-    m_data.assign(audio_buf, audio_buf + audio_len);
-    SDL_free(audio_buf);
 
     // Pre-create and bind a small pool of voices so a shot only has to
     // queue bytes, never allocate streams on the hot path. SDL converts
@@ -160,6 +231,29 @@ void Sound::play()
     }
     SDL_FlushAudioStream(voice->stream);
     voice->playing = true;
+}
+
+void Sound::stop()
+{
+    for (auto& voice : m_voices)
+    {
+        if (voice.stream && voice.playing)
+        {
+            // Halt the voice: anything queued but not yet mixed is dropped.
+            SDL_ClearAudioStream(voice.stream);
+            voice.playing = false;
+        }
+    }
+}
+
+bool Sound::isPlaying() const
+{
+    for (const auto& voice : m_voices)
+    {
+        if (voice.playing)
+            return true;
+    }
+    return false;
 }
 
 void Sound::setVolume(float volume)

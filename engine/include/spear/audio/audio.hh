@@ -55,7 +55,8 @@ private:
 class Sound
 {
 public:
-    /// Load a WAV file (see SDL_LoadWAV).
+    /// Load a sound file. WAV clips use SDL_LoadWAV; everything else
+    /// (MP3/OGG/FLAC) is decoded through SDL_mixer.
     Sound(AudioSystem& system, const std::string& filepath);
     ~Sound();
 
@@ -67,6 +68,12 @@ public:
 
     /// Play the clip; safe to call repeatedly for rapid fire.
     void play();
+
+    /// Stop every currently playing voice of this clip immediately.
+    void stop();
+
+    /// True while at least one voice is still playing the clip.
+    bool isPlaying() const;
 
     /// Set the clip volume (0.0 = silent, 1.0 = full). Applied to all voices.
     void setVolume(float volume);
