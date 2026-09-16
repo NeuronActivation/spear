@@ -3,6 +3,8 @@
 
 #include <SDL3/SDL_audio.h>
 
+#include <glm/glm.hpp>
+
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -40,6 +42,28 @@ public:
         return m_deviceSpec;
     }
 
+    /// Set the audio listener (player ear) position and orientation.
+    /// Should be called once per frame with the camera state.
+    void setListener(const glm::vec3& position, const glm::vec3& front, const glm::vec3& up);
+
+    const glm::vec3& getListenerPosition() const
+    {
+        return m_listenerPos;
+    }
+    const glm::vec3& getListenerFront() const
+    {
+        return m_listenerFront;
+    }
+    const glm::vec3& getListenerRight() const
+    {
+        return m_listenerRight;
+    }
+
+    int getDeviceChannels() const
+    {
+        return m_deviceSpec.channels;
+    }
+
 private:
     friend class Sound;
 
@@ -49,6 +73,11 @@ private:
     SDL_AudioDeviceID m_deviceId = 0;
     SDL_AudioSpec m_deviceSpec{};
     std::vector<Sound*> m_sounds;
+
+    glm::vec3 m_listenerPos{0.0f};
+    glm::vec3 m_listenerFront{0.0f, 0.0f, -1.0f};
+    glm::vec3 m_listenerUp{0.0f, 1.0f, 0.0f};
+    glm::vec3 m_listenerRight{1.0f, 0.0f, 0.0f};
 };
 
 /// A loaded sound clip that can be played, overlapping with itself.
@@ -66,8 +95,14 @@ public:
     Sound(Sound&&) = delete;
     Sound& operator=(Sound&&) = delete;
 
-    /// Play the clip; safe to call repeatedly for rapid fire.
+    /// Play the clip centered on the listener (non-spatial); safe to call
+    /// repeatedly for rapid fire.
     void play();
+
+    /// Play the clip at a world position with optional duration limit.
+    /// durationSeconds > 0 truncates the clip (useful for short footstep
+    /// snippets). 0 = play the whole clip.
+    void playAt(const glm::vec3& position, float durationSeconds = 0.0f);
 
     /// Stop every currently playing voice of this clip immediately.
     void stop();
@@ -88,11 +123,16 @@ private:
 
     struct Voice
     {
-        SDL_AudioStream* stream = nullptr;
+        SDL_AudioStream* streamL = nullptr;
+        SDL_AudioStream* streamR = nullptr;
         bool playing = false;
+        float lastGainL = 1.0f;
+        float lastGainR = 1.0f;
     };
 
     void updateVoices();
+    void applySpatial(Voice& voice, const glm::vec3& position, float durationSeconds);
+    std::size_t bytesPerSecond() const;
 
     AudioSystem& m_system;
     SDL_AudioSpec m_spec{};
