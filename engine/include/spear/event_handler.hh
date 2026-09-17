@@ -32,6 +32,9 @@ public:
     /// Handle key press events (fires only on key down)
     void handleKeyPressed(SDL_Keycode key, const std::function<void()>& callback);
 
+    /// Reset all tracked movement key states.
+    void clearMovementKeys();
+
     /// Check if the application is still running
     bool isRunning() const
     {

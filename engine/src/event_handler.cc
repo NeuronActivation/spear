@@ -65,4 +65,12 @@ void EventHandler::handleKeyPressed(SDL_Keycode key, const std::function<void()>
     m_keyPressedCallbacks.emplace_back(key, callback);
 }
 
+void EventHandler::clearMovementKeys()
+{
+    for (auto& [key, state] : keyStates)
+    {
+        state = false;
+    }
+}
+
 } // namespace spear
