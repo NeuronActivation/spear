@@ -359,6 +359,30 @@ void PipelineManager::initializeTextured(VkDevice device,
     if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_texturedPipeline) != VK_SUCCESS)
         throw std::runtime_error("Failed to create textured graphics pipeline!");
 
+    // Variants for model materials: double sided ones draw back faces too, and transparent
+    // ones blend over the opaque scene without writing depth.
+    rasterizer.cullMode = VK_CULL_MODE_NONE;
+    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
+                                  &m_texturedDoubleSidedPipeline) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create double sided textured pipeline!");
+
+    colorBlendAttachment.blendEnable = VK_TRUE;
+    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.colorBlendOp = VK_BLEND_OP_ADD;
+    colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+    colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+    colorBlendAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
+    depthStencil.depthWriteEnable = VK_FALSE;
+    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr,
+                                  &m_transparentDoubleSidedPipeline) != VK_SUCCESS)
+        throw std::runtime_error("Failed to create double sided transparent pipeline!");
+
+    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+    if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_transparentPipeline) !=
+        VK_SUCCESS)
+        throw std::runtime_error("Failed to create transparent pipeline!");
+
     vkDestroyShaderModule(device, vertModule, nullptr);
     vkDestroyShaderModule(device, fragModule, nullptr);
 
@@ -766,10 +790,12 @@ void PipelineManager::cleanup(VkDevice device)
         vkDestroyPipelineLayout(device, m_uiPipelineLayout, nullptr);
         m_uiPipelineLayout = VK_NULL_HANDLE;
     }
-    if (m_texturedPipeline != VK_NULL_HANDLE)
+    for (VkPipeline* pipeline : {&m_texturedPipeline, &m_texturedDoubleSidedPipeline, &m_transparentPipeline,
+                                 &m_transparentDoubleSidedPipeline})
     {
-        vkDestroyPipeline(device, m_texturedPipeline, nullptr);
-        m_texturedPipeline = VK_NULL_HANDLE;
+        if (*pipeline != VK_NULL_HANDLE)
+            vkDestroyPipeline(device, *pipeline, nullptr);
+        *pipeline = VK_NULL_HANDLE;
     }
     if (m_texturedPipelineLayout != VK_NULL_HANDLE)
     {

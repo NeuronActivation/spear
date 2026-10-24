@@ -18,11 +18,17 @@ struct Material {
 };
 uniform Material material;
 
+// Fragments with less alpha are discarded. 0 keeps every fragment.
+uniform float alphaCutoff;
+
 // Output color
 out vec4 color;
 
 void main()
 {
-    vec3 base = texture(textureSampler, fragTexCoord).rgb * material.diffuseColor;
-    color = vec4(base * spearLighting(), 1.0);
+    vec4 texel = texture(textureSampler, fragTexCoord);
+    if (texel.a < alphaCutoff)
+        discard;
+    vec3 base = texel.rgb * material.diffuseColor;
+    color = vec4(base * spearLighting(), texel.a);
 }

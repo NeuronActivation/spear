@@ -134,6 +134,12 @@ bool GLTFLoader::load(const std::string& file_path, bool asset_path)
         if (material)
         {
             result.name = material->name ? material->name : "";
+            result.doubleSided = material->double_sided;
+            result.alphaCutoff = material->alpha_cutoff;
+            if (material->alpha_mode == cgltf_alpha_mode_mask)
+                result.alphaMode = AlphaMode::Mask;
+            else if (material->alpha_mode == cgltf_alpha_mode_blend)
+                result.alphaMode = AlphaMode::Blend;
             if (material->has_pbr_metallic_roughness)
             {
                 const auto& pbr = material->pbr_metallic_roughness;

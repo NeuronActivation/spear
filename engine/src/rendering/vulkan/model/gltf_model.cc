@@ -66,35 +66,72 @@ GLTFModel::~GLTFModel()
 
 void GLTFModel::render(Camera& camera)
 {
-    VkCommandBuffer cmd = g_frameContext.commandBuffer;
-    VkPipeline pipeline = g_frameContext.shadowPass ? g_frameContext.shadowTexturedPipeline : g_frameContext.texturedPipeline;
-    VkPipelineLayout layout = g_frameContext.shadowPass ? g_frameContext.shadowPipelineLayout : g_frameContext.texturedPipelineLayout;
-    if (cmd == VK_NULL_HANDLE || pipeline == VK_NULL_HANDLE || layout == VK_NULL_HANDLE)
+    using AlphaMode = GLTFLoader::AlphaMode;
+    auto& frame = g_frameContext;
+    VkCommandBuffer cmd = frame.commandBuffer;
+    VkPipelineLayout layout = frame.shadowPass ? frame.shadowPipelineLayout : frame.texturedPipelineLayout;
+    if (cmd == VK_NULL_HANDLE || layout == VK_NULL_HANDLE)
         return;
 
-    vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+    const glm::mat4& model = Transform::getModel();
+    const glm::mat4 view = camera.getViewMatrix();
+    const glm::mat4 mvp =
+            (frame.shadowPass ? frame.lightViewProjection : camera.getProjectionMatrix() * view) * model;
 
-    glm::mat4 mvp = (g_frameContext.shadowPass ? g_frameContext.lightViewProjection : camera.getProjectionMatrix() * camera.getViewMatrix()) * Transform::getModel();
-    if (!g_frameContext.shadowPass)
-        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1, 1,
-                                &g_frameContext.sunDescriptorSet, 0, nullptr);
-
-    for (const auto& mat : m_materialData)
+    if (frame.shadowPass)
     {
-        if (!g_frameContext.shadowPass)
-            vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &mat.descriptorSet, 0, nullptr);
-
-        VkBuffer buffers[] = {mat.vertexBuffer};
-        VkDeviceSize offsets[] = {0};
-        vkCmdBindVertexBuffers(cmd, 0, 1, buffers, offsets);
+        if (frame.shadowTexturedPipeline == VK_NULL_HANDLE)
+            return;
+        vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, frame.shadowTexturedPipeline);
         vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
                            sizeof(glm::mat4), &mvp);
-        if (!g_frameContext.shadowPass)
+        for (const auto& mat : m_materialData)
         {
-            const glm::vec4 viewModel(g_frameContext.viewModel ? 1.0f : 0.0f);
-            vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                               sizeof(glm::mat4), sizeof(glm::vec4), &viewModel);
+            if (mat.alphaMode == AlphaMode::Blend)
+                continue;
+            VkDeviceSize offset = 0;
+            vkCmdBindVertexBuffers(cmd, 0, 1, &mat.vertexBuffer, &offset);
+            vkCmdDraw(cmd, mat.vertexCount, 1, 0, 0);
         }
+        return;
+    }
+
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1, 1, &frame.sunDescriptorSet, 0, nullptr);
+    const float viewModel = frame.viewModel ? 1.0f : 0.0f;
+    VkPipeline bound = VK_NULL_HANDLE;
+    for (const auto& mat : m_materialData)
+    {
+        if (mat.alphaMode == AlphaMode::Blend)
+        {
+            TransparentDraw draw;
+            draw.pipeline = mat.doubleSided ? frame.transparentDoubleSidedPipeline : frame.transparentPipeline;
+            draw.vertexBuffer = mat.vertexBuffer;
+            draw.vertexCount = mat.vertexCount;
+            draw.textureSet = mat.descriptorSet;
+            draw.mvp = mvp;
+            draw.params = glm::vec4(viewModel, 0.0f, 0.0f, 0.0f);
+            draw.depth = -(view * model * glm::vec4(mat.center, 1.0f)).z;
+            if (draw.pipeline != VK_NULL_HANDLE)
+                frame.transparentDraws.push_back(draw);
+            continue;
+        }
+
+        VkPipeline pipeline = mat.doubleSided ? frame.texturedDoubleSidedPipeline : frame.texturedPipeline;
+        if (pipeline == VK_NULL_HANDLE)
+            continue;
+        if (pipeline != bound)
+        {
+            vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+            bound = pipeline;
+        }
+        vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &mat.descriptorSet, 0, nullptr);
+        VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(cmd, 0, 1, &mat.vertexBuffer, &offset);
+        const glm::vec4 params(viewModel, mat.alphaMode == AlphaMode::Mask ? mat.alphaCutoff : 0.0f, 0.0f, 0.0f);
+        vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                           sizeof(glm::mat4), &mvp);
+        vkCmdPushConstants(cmd, layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, sizeof(glm::mat4),
+                           sizeof(glm::vec4), &params);
         vkCmdDraw(cmd, mat.vertexCount, 1, 0, 0);
     }
 }
@@ -102,6 +139,13 @@ void GLTFModel::render(Camera& camera)
 void GLTFModel::createMaterial(const GLTFLoader::Material& material)
 {
     MaterialRenderData renderData;
+    renderData.alphaMode = material.alphaMode;
+    renderData.alphaCutoff = material.alphaCutoff;
+    renderData.doubleSided = material.doubleSided;
+    for (const auto& vertex : material.vertices)
+        renderData.center += vertex.position;
+    if (!material.vertices.empty())
+        renderData.center /= static_cast<float>(material.vertices.size());
 
     renderData.texture = std::make_shared<STBTexture>(m_device, m_physDevice, m_commandPool, m_graphicsQueue);
     renderData.texture->loadFromRGBA(material.baseColor.pixels.data(), material.baseColor.width,

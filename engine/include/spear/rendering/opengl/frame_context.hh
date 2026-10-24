@@ -5,8 +5,18 @@
 
 #include <glm/mat4x4.hpp>
 
+#include <functional>
+#include <vector>
+
 namespace spear::rendering::opengl
 {
+
+/// A blended draw deferred until all opaque geometry is drawn.
+struct TransparentDraw
+{
+    float depth = 0.0f; ///< View-space distance used to draw back to front.
+    std::function<void()> draw;
+};
 
 // Set by the renderer while rendering shadow maps, cleared afterwards.
 // OpenGL meshes check this in render(Camera&) and draw depth only.
@@ -15,6 +25,9 @@ struct FrameContext
     bool shadowPass = false;
     glm::mat4 lightViewProjection{1.0f};
     Shader* shadowShader = nullptr;
+
+    /// Queued while the scene draws. The renderer draws them with blending on and depth writes off.
+    std::vector<TransparentDraw> transparentDraws;
 };
 
 extern FrameContext g_frameContext;

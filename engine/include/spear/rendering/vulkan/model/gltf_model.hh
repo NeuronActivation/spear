@@ -16,6 +16,9 @@ namespace spear::rendering::vulkan
 
 /// glTF 2.0 model (.gltf or .glb) drawn with the textured pipeline, one draw per material.
 /// The descriptor pool needs one combined image sampler set per material.
+///
+/// Opaque and masked materials draw with the scene. Blended materials are queued in the frame
+/// context and drawn back to front after all opaque geometry; they do not cast shadows.
 class GLTFModel : public BaseModel
 {
 public:
@@ -50,6 +53,11 @@ private:
         VkDeviceMemory vertexMemory = VK_NULL_HANDLE;
         uint32_t vertexCount = 0;
         VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
+        GLTFLoader::AlphaMode alphaMode = GLTFLoader::AlphaMode::Opaque;
+        float alphaCutoff = 0.5f;
+        bool doubleSided = false;
+        /// Average vertex position, for sorting blended materials.
+        glm::vec3 center{0.0f};
     };
 
     void createMaterial(const GLTFLoader::Material& material);

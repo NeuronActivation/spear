@@ -38,6 +38,12 @@ void GLTFModel::createMaterial(const GLTFLoader::Material& material)
     using Vertex = GLTFLoader::Vertex;
     MaterialRenderData data;
     data.vertexCount = static_cast<int32_t>(material.vertices.size());
+    data.alphaMode = material.alphaMode;
+    data.alphaCutoff = material.alphaCutoff;
+    for (const auto& vertex : material.vertices)
+        data.center += vertex.position;
+    if (!material.vertices.empty())
+        data.center /= static_cast<float>(material.vertices.size());
 
     glGenVertexArrays(1, &data.vao);
     glBindVertexArray(data.vao);
@@ -73,10 +79,14 @@ void GLTFModel::createMaterial(const GLTFLoader::Material& material)
 
 void GLTFModel::render(Camera& camera)
 {
-    if (beginShadowDraw(GameObject::Transform::getModel()))
+    using AlphaMode = GLTFLoader::AlphaMode;
+    const glm::mat4& model = GameObject::Transform::getModel();
+    if (beginShadowDraw(model))
     {
         for (const auto& mat : m_materialData)
         {
+            if (mat.alphaMode == AlphaMode::Blend)
+                continue;
             glBindVertexArray(mat.vao);
             glDrawArrays(GL_TRIANGLES, 0, mat.vertexCount);
         }
@@ -84,20 +94,34 @@ void GLTFModel::render(Camera& camera)
         return;
     }
 
+    const glm::mat4 view = camera.getViewMatrix();
+    const glm::mat4 mvp = camera.getProjectionMatrix() * view * model;
+    for (const auto& mat : m_materialData)
+    {
+        if (mat.alphaMode == AlphaMode::Blend)
+        {
+            const float depth = -(view * model * glm::vec4(mat.center, 1.0f)).z;
+            g_frameContext.transparentDraws.push_back({depth, [this, &mat, mvp]()
+                                                       { drawMaterial(mat, mvp); }});
+            continue;
+        }
+        drawMaterial(mat, mvp);
+    }
+}
+
+void GLTFModel::drawMaterial(const MaterialRenderData& material, const glm::mat4& mvp)
+{
     Mesh::m_shader->use();
-    const glm::mat4 mvp = camera.getProjectionMatrix() * camera.getViewMatrix() * GameObject::Transform::getModel();
     m_shader->setMat4("mvp", mvp);
     m_shader->setSampler2D("textureSampler", 0);
     // The base color factor is already multiplied into the texture.
     m_shader->setVec3f("material.diffuseColor", glm::vec3(1.0f));
+    m_shader->setFloat("alphaCutoff", material.alphaMode == GLTFLoader::AlphaMode::Mask ? material.alphaCutoff : 0.0f);
 
     glActiveTexture(GL_TEXTURE0);
-    for (const auto& mat : m_materialData)
-    {
-        glBindTexture(GL_TEXTURE_2D, mat.texture);
-        glBindVertexArray(mat.vao);
-        glDrawArrays(GL_TRIANGLES, 0, mat.vertexCount);
-    }
+    glBindTexture(GL_TEXTURE_2D, material.texture);
+    glBindVertexArray(material.vao);
+    glDrawArrays(GL_TRIANGLES, 0, material.vertexCount);
     glBindVertexArray(0);
     glBindTexture(GL_TEXTURE_2D, 0);
     glUseProgram(0);

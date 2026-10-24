@@ -14,6 +14,9 @@ namespace spear::rendering::opengl
 {
 
 /// glTF 2.0 model (.gltf or .glb) drawn with the material shader, one draw per material.
+///
+/// Opaque and masked materials draw with the scene. Blended materials are queued in the frame
+/// context and drawn back to front after all opaque geometry; they do not cast shadows.
 class GLTFModel : public BaseModel
 {
 public:
@@ -36,9 +39,14 @@ private:
         uint32_t vbo = 0;
         uint32_t texture = 0;
         int32_t vertexCount = 0;
+        GLTFLoader::AlphaMode alphaMode = GLTFLoader::AlphaMode::Opaque;
+        float alphaCutoff = 0.5f;
+        /// Average vertex position, for sorting blended materials.
+        glm::vec3 center{0.0f};
     };
 
     void createMaterial(const GLTFLoader::Material& material);
+    void drawMaterial(const MaterialRenderData& material, const glm::mat4& mvp);
 
     std::vector<MaterialRenderData> m_materialData;
 };

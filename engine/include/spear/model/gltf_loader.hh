@@ -33,9 +33,21 @@ public:
         std::vector<unsigned char> pixels;
     };
 
+    /// How the base color's alpha is used, as in the glTF material's alphaMode.
+    enum class AlphaMode
+    {
+        Opaque, ///< Alpha is ignored.
+        Mask,   ///< Fragments with alpha below alphaCutoff are discarded, the rest are opaque.
+        Blend,  ///< Blended over what is behind it.
+    };
+
     struct Material
     {
         std::string name;
+        AlphaMode alphaMode = AlphaMode::Opaque;
+        float alphaCutoff = 0.5f;
+        /// Back faces are visible too.
+        bool doubleSided = false;
         /// Triangle list, counter-clockwise front faces.
         std::vector<Vertex> vertices;
         /// Base color texture with the material's base color factor multiplied in. Always at

@@ -5,6 +5,7 @@
 
 #include <GL/glew.h>
 
+#include <algorithm>
 #include <iostream>
 
 namespace spear::rendering::opengl
@@ -178,6 +179,23 @@ void Renderer::render()
 
     if (m_camera && m_scene)
         m_scene->update(*m_camera);
+
+    // Transparent materials, back to front over the opaque scene.
+    auto transparent = std::move(g_frameContext.transparentDraws);
+    g_frameContext.transparentDraws.clear();
+    if (!transparent.empty())
+    {
+        std::stable_sort(transparent.begin(), transparent.end(), [](const TransparentDraw& a, const TransparentDraw& b)
+                         { return a.depth > b.depth; });
+        glEnable(GL_BLEND);
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        glDepthMask(GL_FALSE);
+        for (const auto& draw : transparent)
+            draw.draw();
+        glDepthMask(GL_TRUE);
+        glDisable(GL_BLEND);
+        openglError("Renderer::render transparent");
+    }
 }
 
 void Renderer::setBackgroundColor(float r, float g, float b, float a)

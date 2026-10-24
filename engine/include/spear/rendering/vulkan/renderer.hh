@@ -4,6 +4,7 @@
 #include <spear/camera.hh>
 #include <spear/rendering/base_renderer.hh>
 #include <spear/rendering/lighting_uniform.hh>
+#include <spear/rendering/vulkan/frame_context.hh>
 #include <spear/rendering/vulkan/smoke_renderer.hh>
 #include <spear/rendering/vulkan/ui/ui_renderer.hh>
 #include <spear/window/vulkan_window.hh>
@@ -135,6 +136,9 @@ private:
     void createShadowRenderPass();
     void transitionShadowImages();
     void recordLighting(VkCommandBuffer commandBuffer, uint32_t imageIndex);
+    /// Draws the frame's queued transparent materials back to front, after the opaque scene.
+    void recordTransparentDraws(VkCommandBuffer commandBuffer, std::vector<TransparentDraw>& draws,
+                                VkDescriptorSet lightingSet);
     void recordShadowPass(VkCommandBuffer commandBuffer, VkFramebuffer framebuffer, uint32_t size,
                           const glm::mat4& lightViewProjection);
     struct PointShadow

@@ -205,8 +205,12 @@ void Renderer::drawFrame()
         g_frameContext.colorPipelineLayout = m_pipelineManager.getPipelineLayout();
         g_frameContext.texturedPipeline = m_pipelineManager.getTexturedPipeline();
         g_frameContext.texturedPipelineLayout = m_pipelineManager.getTexturedPipelineLayout();
+        g_frameContext.texturedDoubleSidedPipeline = m_pipelineManager.getTexturedDoubleSidedPipeline();
+        g_frameContext.transparentPipeline = m_pipelineManager.getTransparentPipeline();
+        g_frameContext.transparentDoubleSidedPipeline = m_pipelineManager.getTransparentDoubleSidedPipeline();
         g_frameContext.sunDescriptorSet = sunFrame.descriptor;
         m_scene->update(*m_camera);
+        recordTransparentDraws(commandBuffer, g_frameContext.transparentDraws, sunFrame.descriptor);
         g_frameContext = {};
     }
 
@@ -275,6 +279,37 @@ void Renderer::drawFrame()
     }
 
     m_currentFrame = (m_currentFrame + 1) % m_framesInFlight;
+}
+
+void Renderer::recordTransparentDraws(VkCommandBuffer commandBuffer, std::vector<TransparentDraw>& draws,
+                                      VkDescriptorSet lightingSet)
+{
+    if (draws.empty())
+        return;
+    // Back to front, so nearer surfaces blend over farther ones.
+    std::stable_sort(draws.begin(), draws.end(), [](const TransparentDraw& a, const TransparentDraw& b)
+                     { return a.depth > b.depth; });
+
+    VkPipelineLayout layout = m_pipelineManager.getTexturedPipelineLayout();
+    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 1, 1, &lightingSet, 0, nullptr);
+    VkPipeline bound = VK_NULL_HANDLE;
+    for (const auto& draw : draws)
+    {
+        if (draw.pipeline != bound)
+        {
+            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, draw.pipeline);
+            bound = draw.pipeline;
+        }
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, layout, 0, 1, &draw.textureSet, 0,
+                                nullptr);
+        VkDeviceSize offset = 0;
+        vkCmdBindVertexBuffers(commandBuffer, 0, 1, &draw.vertexBuffer, &offset);
+        vkCmdPushConstants(commandBuffer, layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+                           sizeof(glm::mat4), &draw.mvp);
+        vkCmdPushConstants(commandBuffer, layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+                           sizeof(glm::mat4), sizeof(glm::vec4), &draw.params);
+        vkCmdDraw(commandBuffer, draw.vertexCount, 1, 0, 0);
+    }
 }
 
 float Renderer::advanceSmokeClock()
