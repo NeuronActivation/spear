@@ -2,12 +2,12 @@
 #define SPEAR_EVENT_HANDLER_HH
 
 #include <spear/movement_controller.hh>
+#include <spear/keybinds.hh>
 
 #include <SDL3/SDL_events.h>
 
 #include <functional>
 #include <unordered_map>
-#include <vector>
 
 namespace spear
 {
@@ -37,8 +37,7 @@ public:
     void clearMovementKeys();
     bool movementKeyDown(SDL_Keycode key) const
     {
-        const auto it = keyStates.find(key);
-        return it != keyStates.end() && it->second;
+        return keybinds.movementKeyDown(key);
     }
 
     /// Check if the application is still running
@@ -55,11 +54,8 @@ public:
 
 private:
     std::unordered_map<uint32_t, EventCallback> callbacks;
-    std::unordered_map<SDL_Keycode, bool> keyStates = {
-            {SDLK_W, false}, {SDLK_S, false}, {SDLK_A, false}, {SDLK_D, false}, {SDLK_SPACE, false}, {SDLK_LSHIFT, false}, {SDLK_RSHIFT, false}, {SDLK_LCTRL, false}, {SDLK_RCTRL, false}};
+    Keybinds keybinds;
     bool running = true;
-    std::vector<std::pair<SDL_Keycode, std::function<void()>>> m_inputKeys;
-    std::vector<std::pair<SDL_Keycode, std::function<void()>>> m_keyPressedCallbacks;
 };
 
 } // namespace spear

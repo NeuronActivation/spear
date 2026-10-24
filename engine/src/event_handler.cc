@@ -1,7 +1,5 @@
 #include <spear/event_handler.hh>
 
-#include <iostream>
-
 namespace spear
 {
 
@@ -25,54 +23,26 @@ void EventHandler::handleEvents(MovementController& movement_controller, float d
         }
 
         if (event.type == SDL_EVENT_KEY_DOWN || event.type == SDL_EVENT_KEY_UP)
-        {
-            for (auto& key : m_inputKeys)
-            {
-                if (event.key.key == key.first)
-                {
-                    key.second();
-                }
-            }
-
-            if (event.type == SDL_EVENT_KEY_DOWN)
-            {
-                for (auto& key : m_keyPressedCallbacks)
-                {
-                    if (event.key.key == key.first)
-                    {
-                        key.second();
-                    }
-                }
-            }
-
-            bool isPressed = (event.type == SDL_EVENT_KEY_DOWN);
-            if (keyStates.find(event.key.key) != keyStates.end())
-            {
-                keyStates[event.key.key] = isPressed;
-            }
-        }
+            keybinds.handleKeyEvent(event.key);
     }
 
     if (allowMovement)
-        movement_controller.processInput(keyStates, delta_time);
+        movement_controller.processInput(keybinds.movementKeyStates(), delta_time);
 }
 
 void EventHandler::handleInput(SDL_Keycode key, const std::function<void()>& callback)
 {
-    m_inputKeys.emplace_back(key, callback);
+    keybinds.bindInput(key, callback);
 }
 
 void EventHandler::handleKeyPressed(SDL_Keycode key, const std::function<void()>& callback)
 {
-    m_keyPressedCallbacks.emplace_back(key, callback);
+    keybinds.bindKeyPressed(key, callback);
 }
 
 void EventHandler::clearMovementKeys()
 {
-    for (auto& [key, state] : keyStates)
-    {
-        state = false;
-    }
+    keybinds.clearMovementKeys();
 }
 
 } // namespace spear

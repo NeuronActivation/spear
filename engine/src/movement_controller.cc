@@ -1,4 +1,5 @@
 #include <spear/movement_controller.hh>
+#include <spear/keybinds.hh>
 
 #include <btBulletDynamicsCommon.h>
 
@@ -48,7 +49,9 @@ MovementController::MovementController(Camera& camera, btDiscreteDynamicsWorld* 
       m_jumpSpeed(jumpSpeed)
 {
     m_prevKeyStates = {
-            {SDLK_W, false}, {SDLK_S, false}, {SDLK_A, false}, {SDLK_D, false}, {SDLK_SPACE, false}};
+            {movement_keys::forward, false}, {movement_keys::backward, false},
+            {movement_keys::left, false}, {movement_keys::right, false},
+            {movement_keys::jump, false}};
 }
 
 void MovementController::setMovementModifiers(float crouchEyeHeight, float crouchSpeedScale,
@@ -72,8 +75,10 @@ void MovementController::processInput(const std::unordered_map<SDL_Keycode, bool
         const auto it = keyStates.find(key);
         return it != keyStates.end() && it->second;
     };
-    const bool crouchRequested = keyDown(SDLK_LCTRL) || keyDown(SDLK_RCTRL);
-    const bool silentWalk = keyDown(SDLK_LSHIFT) || keyDown(SDLK_RSHIFT);
+    const bool crouchRequested = keyDown(movement_keys::crouchLeft) ||
+                                 keyDown(movement_keys::crouchRight);
+    const bool silentWalk = keyDown(movement_keys::silentWalkLeft) ||
+                            keyDown(movement_keys::silentWalkRight);
     if (m_crouchEyeHeight > 0.0f && crouchRequested && !m_crouched)
     {
         auto position = m_camera.getPosition();
@@ -121,13 +126,13 @@ void MovementController::processInput(const std::unordered_map<SDL_Keycode, bool
     glm::vec3 right = glm::normalize(glm::vec3(rightVec.x, 0.0f, rightVec.z));
 
     glm::vec3 direction(0.f);
-    if (keyStates.at(SDLK_W))
+    if (keyStates.at(movement_keys::forward))
         direction += forward;
-    if (keyStates.at(SDLK_S))
+    if (keyStates.at(movement_keys::backward))
         direction -= forward;
-    if (keyStates.at(SDLK_A))
+    if (keyStates.at(movement_keys::left))
         direction -= right;
-    if (keyStates.at(SDLK_D))
+    if (keyStates.at(movement_keys::right))
         direction += right;
 
     auto camPos = m_camera.getPosition();
@@ -258,9 +263,9 @@ void MovementController::processInput(const std::unordered_map<SDL_Keycode, bool
     }
 
     // --- Jump (edge-triggered on space press) ---
-    auto spaceIt = keyStates.find(SDLK_SPACE);
+    auto spaceIt = keyStates.find(movement_keys::jump);
     bool spaceDown = (spaceIt != keyStates.end()) && spaceIt->second;
-    bool spaceWasDown = m_prevKeyStates[SDLK_SPACE];
+    bool spaceWasDown = m_prevKeyStates[movement_keys::jump];
 
     if (spaceDown && !spaceWasDown && m_onGround && !m_crouched)
     {
@@ -322,11 +327,11 @@ void MovementController::processInput(const std::unordered_map<SDL_Keycode, bool
     }
 
     // Store previous key states for edge detection
-    m_prevKeyStates[SDLK_W] = keyStates.at(SDLK_W);
-    m_prevKeyStates[SDLK_S] = keyStates.at(SDLK_S);
-    m_prevKeyStates[SDLK_A] = keyStates.at(SDLK_A);
-    m_prevKeyStates[SDLK_D] = keyStates.at(SDLK_D);
-    m_prevKeyStates[SDLK_SPACE] = spaceDown;
+    m_prevKeyStates[movement_keys::forward] = keyStates.at(movement_keys::forward);
+    m_prevKeyStates[movement_keys::backward] = keyStates.at(movement_keys::backward);
+    m_prevKeyStates[movement_keys::left] = keyStates.at(movement_keys::left);
+    m_prevKeyStates[movement_keys::right] = keyStates.at(movement_keys::right);
+    m_prevKeyStates[movement_keys::jump] = spaceDown;
 }
 
 } // namespace spear
