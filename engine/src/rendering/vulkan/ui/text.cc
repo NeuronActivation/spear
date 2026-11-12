@@ -74,8 +74,11 @@ Text::Text(VkDevice device,
 
 Text::~Text()
 {
-    if (m_vertexBuffer != VK_NULL_HANDLE || m_vertexMemory != VK_NULL_HANDLE)
+    if (m_descriptorSet != VK_NULL_HANDLE ||
+        m_vertexBuffer != VK_NULL_HANDLE || m_vertexMemory != VK_NULL_HANDLE)
         vkDeviceWaitIdle(m_device);
+    if (m_descriptorSet != VK_NULL_HANDLE)
+        vkFreeDescriptorSets(m_device, m_descriptorPool, 1, &m_descriptorSet);
     if (m_vertexBuffer != VK_NULL_HANDLE)
         vkDestroyBuffer(m_device, m_vertexBuffer, nullptr);
     if (m_vertexMemory != VK_NULL_HANDLE)
